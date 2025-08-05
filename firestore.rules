@@ -65,6 +65,14 @@ service cloud.firestore {
                      request.auth.uid == userId &&
                      request.resource.data.userId == userId;
       }
+      
+      // User's social posts
+      match /socialPosts/{postId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.data.userId == userId;
+      }
     }
     
     // Chat Sessions - Users can only access their own sessions
