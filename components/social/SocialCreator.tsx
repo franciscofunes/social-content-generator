@@ -445,37 +445,37 @@ export default function SocialCreator() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-xl">
-                <Share2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+        <div className="mb-6 lg:mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 bg-green-100 dark:bg-green-900/20 rounded-xl flex-shrink-0">
+                <Share2 className="w-5 h-5 lg:w-6 lg:h-6 text-green-600 dark:text-green-400" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Social Media Creator</h1>
-                <p className="text-gray-600 dark:text-gray-400">Create engaging posts for multiple platforms with AI</p>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">Social Media Creator</h1>
+                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400 truncate">Create engaging posts for multiple platforms with AI</p>
               </div>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex bg-white dark:bg-gray-800 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
+            <div className="flex bg-white dark:bg-gray-800 rounded-lg p-1 border border-gray-200 dark:border-gray-700 flex-shrink-0">
               <Button
                 variant={currentTab === 'create' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setCurrentTab('create')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1 lg:gap-2 text-xs lg:text-sm"
               >
-                <Sparkles className="h-4 w-4" />
-                Create
+                <Sparkles className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">Create</span>
               </Button>
               <Button
                 variant={currentTab === 'history' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setCurrentTab('history')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1 lg:gap-2 text-xs lg:text-sm"
               >
-                <History className="h-4 w-4" />
-                History
+                <History className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">History</span>
               </Button>
             </div>
           </div>
@@ -485,16 +485,16 @@ export default function SocialCreator() {
         {currentTab === 'history' ? (
           <PostHistory onEditPost={handleEditPost} />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 xl:gap-8">
           {/* Left Column - Configuration */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="xl:col-span-1 space-y-4 lg:space-y-6">
             {/* Platform Selection */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Select Platforms
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+              <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-3 lg:mb-4 flex items-center gap-2">
+                <Users className="h-4 w-4 lg:h-5 lg:w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <span className="truncate">Select Platforms</span>
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 lg:space-y-3">
                 {platforms.map((platform) => {
                   const Icon = platform.icon;
                   const isSelected = selectedPlatforms.includes(platform.id);
@@ -502,21 +502,22 @@ export default function SocialCreator() {
                     <div key={platform.id} className="relative">
                       <Button
                         variant={isSelected ? "default" : "outline"}
-                        className={`w-full justify-start h-auto p-4 transition-all duration-200 ${
+                        className={`w-full justify-start h-auto p-3 lg:p-4 transition-all duration-200 ${
                           isSelected 
-                            ? `${platform.color} text-white border-transparent transform scale-[1.02]` 
+                            ? `${platform.color} text-white border-transparent transform scale-[1.01] lg:scale-[1.02]` 
                             : 'hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
                         onClick={() => togglePlatform(platform.id)}
                       >
-                        <div className="flex items-center gap-3 w-full">
-                          <Icon className="h-5 w-5 flex-shrink-0" />
-                          <div className="text-left flex-1">
-                            <div className="font-medium">{platform.name}</div>
+                        <div className="flex items-center gap-2 lg:gap-3 w-full min-w-0">
+                          <Icon className="h-4 w-4 lg:h-5 lg:w-5 flex-shrink-0" />
+                          <div className="text-left flex-1 min-w-0">
+                            <div className="font-medium text-sm lg:text-base truncate">{platform.name}</div>
                             <div className={`text-xs mt-1 ${isSelected ? 'opacity-90' : 'opacity-70'}`}>
-                              Max {platform.limits.caption} chars • {platform.limits.hashtags} hashtags
+                              <span className="hidden sm:inline">Max {platform.limits.caption} chars • </span>
+                              <span>{platform.limits.hashtags} hashtags</span>
                             </div>
-                            <div className={`text-xs mt-1 ${isSelected ? 'opacity-75' : 'opacity-60'}`}>
+                            <div className={`text-xs mt-1 ${isSelected ? 'opacity-75' : 'opacity-60'} hidden lg:block`}>
                               {platform.features.slice(0, 2).join(', ')}
                             </div>
                           </div>
@@ -550,16 +551,16 @@ export default function SocialCreator() {
             </div>
 
             {/* Content Settings */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Type className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                Content Settings
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 lg:p-6">
+              <h3 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-white mb-3 lg:mb-4 flex items-center gap-2">
+                <Type className="h-4 w-4 lg:h-5 lg:w-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                <span className="truncate">Content Settings</span>
               </h3>
               
-              <div className="space-y-4">
+              <div className="space-y-3 lg:space-y-4">
                 {/* Topic */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Topic/Subject
                     </label>
@@ -569,28 +570,29 @@ export default function SocialCreator() {
                       size="sm"
                       onClick={enhanceTopic}
                       disabled={isEnhancingTopic || !topic.trim() || selectedPlatforms.length === 0}
-                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 self-start sm:self-auto text-xs lg:text-sm flex-shrink-0"
                     >
                       {isEnhancingTopic ? (
-                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        <RefreshCw className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin" />
                       ) : (
-                        <Wand2 className="h-4 w-4 mr-1" />
+                        <Wand2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
                       )}
-                      {isEnhancingTopic ? 'Enhancing...' : 'Enhance with AI'}
+                      <span className="hidden sm:inline">{isEnhancingTopic ? 'Enhancing...' : 'Enhance with AI'}</span>
+                      <span className="sm:hidden">✨</span>
                     </Button>
                   </div>
                   <input
                     type="text"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    placeholder="Enter the topic/subject (e.g., 'New Product Launch', 'Digital Marketing Tips')"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Enter the topic/subject (e.g., 'New Product Launch')"
+                    className="w-full p-2 lg:p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm lg:text-base"
                   />
                 </div>
 
                 {/* Content/Message */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Content/Message
                     </label>
@@ -600,14 +602,15 @@ export default function SocialCreator() {
                       size="sm"
                       onClick={enhanceContent}
                       disabled={isEnhancingContent || !content.trim() || selectedPlatforms.length === 0}
-                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 self-start sm:self-auto text-xs lg:text-sm flex-shrink-0"
                     >
                       {isEnhancingContent ? (
-                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        <RefreshCw className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin" />
                       ) : (
-                        <Wand2 className="h-4 w-4 mr-1" />
+                        <Wand2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
                       )}
-                      {isEnhancingContent ? 'Enhancing...' : 'Enhance with AI'}
+                      <span className="hidden sm:inline">{isEnhancingContent ? 'Enhancing...' : 'Enhance with AI'}</span>
+                      <span className="sm:hidden">✨</span>
                     </Button>
                   </div>
                   <textarea
@@ -705,29 +708,33 @@ export default function SocialCreator() {
 
               <Button
                 onClick={generatePosts}
-                disabled={isGenerating || !topic.trim() || selectedPlatforms.length === 0}
-                className="w-full mt-6 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white border-0"
+                disabled={isGenerating || !topic.trim() || !content.trim() || selectedPlatforms.length === 0}
+                className="w-full mt-4 lg:mt-6 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white border-0"
                 size="lg"
               >
                 {isGenerating ? (
                   <>
-                    <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                    Generating Content...
+                    <RefreshCw className="h-4 w-4 lg:h-5 lg:w-5 mr-2 animate-spin" />
+                    <span className="hidden sm:inline">Generating Content...</span>
+                    <span className="sm:hidden">Generating...</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="h-5 w-5 mr-2" />
-                    Generate Posts ({selectedPlatforms.length} platform{selectedPlatforms.length !== 1 ? 's' : ''})
+                    <Zap className="h-4 w-4 lg:h-5 lg:w-5 mr-2" />
+                    <span className="hidden sm:inline">Generate Posts ({selectedPlatforms.length} platform{selectedPlatforms.length !== 1 ? 's' : ''})</span>
+                    <span className="sm:hidden">Generate ({selectedPlatforms.length})</span>
                   </>
                 )}
               </Button>
               
               {(isGenerating || isSaving) && (
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    {isGenerating && 'Creating platform-optimized content...'}
-                    {isSaving && 'Saving to your history...'}
+                <div className="mt-3 lg:mt-4 p-2 lg:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-xs lg:text-sm text-blue-800 dark:text-blue-200">
+                    <RefreshCw className="h-3 w-3 lg:h-4 lg:w-4 animate-spin flex-shrink-0" />
+                    <span className="truncate">
+                      {isGenerating && 'Creating platform-optimized content...'}
+                      {isSaving && 'Saving to your history...'}
+                    </span>
                   </div>
                 </div>
               )}
@@ -762,35 +769,35 @@ export default function SocialCreator() {
           </div>
 
           {/* Right Column - Generated Posts */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-4 lg:space-y-6">
             {Object.keys(generatedPosts).length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-                <Share2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Generate Your Social Posts</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 lg:p-12 text-center">
+                <Share2 className="h-12 w-12 lg:h-16 lg:w-16 text-gray-400 mx-auto mb-3 lg:mb-4" />
+                <h3 className="text-lg lg:text-xl font-semibold text-gray-900 dark:text-white mb-2">Generate Your Social Posts</h3>
+                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400 mb-4 lg:mb-6">
                   Configure your settings and click "Generate Posts" to create platform-optimized content
                 </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                   <div className="text-center">
-                    <TrendingUp className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                    <p className="text-sm font-medium">Optimized Content</p>
+                    <TrendingUp className="h-6 w-6 lg:h-8 lg:w-8 text-blue-500 mx-auto mb-1 lg:mb-2" />
+                    <p className="text-xs lg:text-sm font-medium">Optimized Content</p>
                   </div>
                   <div className="text-center">
-                    <Users className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                    <p className="text-sm font-medium">Multi-Platform</p>
+                    <Users className="h-6 w-6 lg:h-8 lg:w-8 text-green-500 mx-auto mb-1 lg:mb-2" />
+                    <p className="text-xs lg:text-sm font-medium">Multi-Platform</p>
                   </div>
                   <div className="text-center">
-                    <Hash className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                    <p className="text-sm font-medium">Smart Hashtags</p>
+                    <Hash className="h-6 w-6 lg:h-8 lg:w-8 text-purple-500 mx-auto mb-1 lg:mb-2" />
+                    <p className="text-xs lg:text-sm font-medium">Smart Hashtags</p>
                   </div>
                   <div className="text-center">
-                    <Calendar className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-                    <p className="text-sm font-medium">Ready to Post</p>
+                    <Calendar className="h-6 w-6 lg:h-8 lg:w-8 text-orange-500 mx-auto mb-1 lg:mb-2" />
+                    <p className="text-xs lg:text-sm font-medium">Ready to Post</p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4 lg:space-y-6">
                 {Object.entries(generatedPosts).map(([platformId, post]: [string, any]) => {
                   const Icon = post.platform.icon;
                   const isOverLimit = post.characterCount > post.platform.limits.caption;
@@ -798,26 +805,26 @@ export default function SocialCreator() {
                   return (
                     <div
                       key={platformId}
-                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transform hover:scale-[1.01] transition-all duration-200"
+                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transform hover:scale-[1.005] lg:hover:scale-[1.01] transition-all duration-200"
                     >
                       {/* Platform Header */}
-                      <div className={`${post.platform.color} p-6`}>
-                        <div className="flex items-center justify-between text-white">
-                          <div className="flex items-center gap-4">
-                            <div className="p-2 bg-white/20 rounded-lg">
-                              <Icon className="h-6 w-6" />
+                      <div className={`${post.platform.color} p-4 lg:p-6`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-white">
+                          <div className="flex items-center gap-3 lg:gap-4 min-w-0">
+                            <div className="p-1.5 lg:p-2 bg-white/20 rounded-lg flex-shrink-0">
+                              <Icon className="h-5 w-5 lg:h-6 lg:w-6" />
                             </div>
-                            <div>
-                              <h3 className="font-semibold text-lg">{post.platform.name}</h3>
-                              <div className="flex items-center gap-4 text-sm opacity-90 mt-1">
-                                <span>{post.characterCount}/{post.platform.limits.caption} chars</span>
-                                <span>{post.wordCount} words</span>
-                                <span>{post.hashtags.length} hashtags</span>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="font-semibold text-base lg:text-lg truncate">{post.platform.name}</h3>
+                              <div className="flex flex-wrap items-center gap-2 lg:gap-4 text-xs lg:text-sm opacity-90 mt-1">
+                                <span className="whitespace-nowrap">{post.characterCount}/{post.platform.limits.caption} chars</span>
+                                <span className="whitespace-nowrap">{post.wordCount} words</span>
+                                <span className="whitespace-nowrap">{post.hashtags.length} hashtags</span>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             {isOverLimit && (
                               <div className="px-2 py-1 bg-red-500/20 rounded text-xs font-medium">
                                 Over Limit
@@ -833,9 +840,9 @@ export default function SocialCreator() {
                       </div>
 
                       {/* Content */}
-                      <div className="p-6">
-                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
-                          <pre className="whitespace-pre-wrap text-sm text-gray-900 dark:text-white font-sans leading-relaxed">
+                      <div className="p-4 lg:p-6">
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 lg:p-4 mb-3 lg:mb-4">
+                          <pre className="whitespace-pre-wrap text-xs lg:text-sm text-gray-900 dark:text-white font-sans leading-relaxed overflow-auto">
                             {post.content}
                           </pre>
                         </div>

@@ -247,7 +247,7 @@ export function ImageModal({ isOpen, onClose, imageUrl, promptUsed }: ImageModal
       case 'instagram':
         // Instagram doesn't support direct URL sharing, so we'll copy the image URL
         handleCopyImageUrl();
-        toast.info('Image URL copied! Open Instagram and paste the link in your story or post.');
+        toast.success('Image URL copied! Open Instagram and paste the link in your story or post.');
         return;
       default:
         return;

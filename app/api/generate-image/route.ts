@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Set defaults with no restrictions
     const {
+      prompt, // Extract prompt separately to avoid duplication
       model_type = 'base',
       model_version = '3.2',
       num_results = 1,
@@ -64,6 +65,8 @@ export async function POST(request: NextRequest) {
       prompt_content_moderation = false, // Disabled per request
       content_moderation = false, // Disabled per request
       ip_signal = false, // Disabled per request
+      seed,
+      negative_prompt,
       ...otherParams
     } = body;
 
@@ -90,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Build request payload
     const payload: any = {
-      prompt: body.prompt.trim(),
+      prompt: prompt.trim(),
       num_results,
       aspect_ratio,
       sync,
@@ -112,8 +115,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Add optional parameters if provided
-    if (body.seed !== undefined) payload.seed = body.seed;
-    if (body.negative_prompt) payload.negative_prompt = body.negative_prompt;
+    if (seed !== undefined) payload.seed = seed;
+    if (negative_prompt) payload.negative_prompt = negative_prompt;
 
     console.log('Calling Bria AI API:', {
       endpoint,

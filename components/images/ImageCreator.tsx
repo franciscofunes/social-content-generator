@@ -230,11 +230,11 @@ export default function ImageCreator() {
     console.log('Image loaded successfully');
   };
 
-  const handleImageError = async (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const handleImageError = async (event?: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error('Image failed to load:', generatedImage);
     
     // Try using the proxy as a fallback
-    if (generatedImage && !generatedImage.includes('/api/image-proxy')) {
+    if (generatedImage && !generatedImage.includes('/api/image-proxy') && event) {
       console.log('Attempting to load image through proxy...');
       const proxiedUrl = `/api/image-proxy?url=${encodeURIComponent(generatedImage)}`;
       const img = event.target as HTMLImageElement;
@@ -386,55 +386,57 @@ export default function ImageCreator() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl">
-              <ImageIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        <div className="mb-6 lg:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+            <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex-shrink-0">
+              <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Image Creator</h1>
-              <p className="text-gray-600 dark:text-gray-400">Generate stunning images with advanced AI</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">AI Image Creator</h1>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 truncate">Generate stunning images with advanced AI</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Left Column - Controls */}
-          <div className="space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             {/* Prompt Input */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Your Prompt</h3>
-                <Button variant="ghost" size="sm" onClick={copyPrompt}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white min-w-0 flex-1 truncate">Your Prompt</h3>
+                <Button variant="ghost" size="sm" onClick={copyPrompt} className="w-full sm:w-auto">
                   <Copy className="h-4 w-4 mr-2" />
-                  Copy
+                  <span className="sm:inline">Copy</span>
                 </Button>
               </div>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Describe the image you want to create..."
-                className="w-full h-32 p-4 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full h-24 sm:h-32 p-3 sm:p-4 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
-              <div className="flex items-center justify-between mt-4">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
                   {prompt.length} characters
                 </span>
                 <Button
                   onClick={generateImage}
                   disabled={isGenerating || !prompt.trim()}
                   size="lg"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 order-1 sm:order-2"
                 >
                   {isGenerating ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
+                      <span className="hidden sm:inline">Generating...</span>
+                      <span className="sm:hidden">Generating</span>
                     </>
                   ) : (
                     <>
                       <Wand2 className="h-4 w-4 mr-2" />
-                      Generate Image
+                      <span className="hidden sm:inline">Generate Image</span>
+                      <span className="sm:hidden">Generate</span>
                     </>
                   )}
                 </Button>
@@ -442,19 +444,19 @@ export default function ImageCreator() {
             </div>
 
             {/* Quick Templates */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Templates</h3>
-              <div className="space-y-3">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Quick Templates</h3>
+              <div className="space-y-2 sm:space-y-3">
                 {promptTemplates.map((template, index) => (
                   <Button
                     key={index}
                     variant="ghost"
-                    className="w-full text-left justify-start h-auto p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 min-h-[3rem]"
+                    className="w-full text-left justify-start h-auto p-2 sm:p-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 min-h-[2.5rem] sm:min-h-[3rem]"
                     onClick={() => useTemplate(template)}
                   >
-                    <div className="flex items-start gap-3 w-full">
-                      <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-                      <span className="text-sm leading-relaxed break-words text-left whitespace-normal overflow-hidden">
+                    <div className="flex items-start gap-2 sm:gap-3 w-full min-w-0">
+                      <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mt-0.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                      <span className="text-xs sm:text-sm leading-relaxed break-words text-left whitespace-normal overflow-hidden min-w-0 flex-1">
                         {template}
                       </span>
                     </div>
@@ -464,57 +466,57 @@ export default function ImageCreator() {
             </div>
 
             {/* Model Selection */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Bria AI Model</h3>
-              <div className="grid grid-cols-1 gap-3">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Bria AI Model</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2 sm:gap-3">
                 {modelTypes.map((model) => (
                   <Button
                     key={model.id}
                     variant={modelType === model.id ? "default" : "outline"}
-                    className="h-auto p-4 flex flex-col items-start"
+                    className="h-auto p-3 sm:p-4 flex flex-col items-start text-left"
                     onClick={() => setModelType(model.id)}
                   >
-                    <span className="font-medium">{model.name}</span>
-                    <span className="text-xs opacity-70 mt-1">{model.description}</span>
+                    <span className="font-medium text-sm sm:text-base truncate w-full">{model.name}</span>
+                    <span className="text-xs opacity-70 mt-1 break-words w-full">{model.description}</span>
                   </Button>
                 ))}
               </div>
             </div>
 
             {/* Quality & Performance */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quality & Performance</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Quality & Performance</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quality Setting</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quality Setting</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {qualitySettings.map((quality) => (
                       <Button
                         key={quality.id}
                         variant={qualitySetting === quality.id ? "default" : "outline"}
-                        className="h-auto p-3 flex flex-col items-center"
+                        className="h-auto p-2 sm:p-3 flex flex-col items-center text-center min-w-0"
                         onClick={() => setQualitySetting(quality.id)}
                       >
-                        <span className="font-medium text-sm">{quality.name}</span>
-                        <span className="text-xs opacity-70 mt-1">{quality.description}</span>
-                        <span className="text-xs text-blue-600 dark:text-blue-400 mt-1">Steps: {quality.steps} | Guidance: {quality.guidance}</span>
+                        <span className="font-medium text-xs sm:text-sm truncate w-full">{quality.name}</span>
+                        <span className="text-xs opacity-70 mt-1 break-words w-full">{quality.description}</span>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 mt-1 truncate w-full">Steps: {quality.steps} | Guidance: {quality.guidance}</span>
                       </Button>
                     ))}
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Medium Type</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Medium Type</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {mediumTypes.map((med) => (
                       <Button
                         key={med.id}
                         variant={medium === med.id ? "default" : "outline"}
-                        className="h-auto p-3 flex flex-col items-start"
+                        className="h-auto p-2 sm:p-3 flex flex-col items-start text-left min-w-0"
                         onClick={() => setMedium(med.id)}
                       >
-                        <span className="font-medium">{med.name}</span>
-                        <span className="text-xs opacity-70 mt-1">{med.description}</span>
+                        <span className="font-medium text-sm sm:text-base truncate w-full">{med.name}</span>
+                        <span className="text-xs opacity-70 mt-1 break-words w-full">{med.description}</span>
                       </Button>
                     ))}
                   </div>
@@ -523,38 +525,39 @@ export default function ImageCreator() {
             </div>
 
             {/* Advanced Settings */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <Button
                 variant="ghost"
-                className="w-full flex items-center justify-between p-0 mb-4"
+                className="w-full flex items-center justify-between p-0 mb-3 sm:mb-4 min-w-0"
                 onClick={() => setShowAdvanced(!showAdvanced)}
               >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Advanced Settings</h3>
-                <ChevronDown className={`h-5 w-5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 text-left">Advanced Settings</h3>
+                <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 ml-2 ${showAdvanced ? 'rotate-180' : ''}`} />
               </Button>
               
               {showAdvanced && (
                 <div className="space-y-6">
                   {/* Negative Prompt */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Negative Prompt (Optional)</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Negative Prompt (Optional)</label>
                     <textarea
                       value={negativePrompt}
                       onChange={(e) => setNegativePrompt(e.target.value)}
                       placeholder="Elements to exclude from the image..."
-                      className="w-full h-20 p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                      className="w-full h-16 sm:h-20 p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs sm:text-sm"
                     />
                   </div>
 
                   {/* Number of Results */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Number of Images</label>
-                    <div className="grid grid-cols-4 gap-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Number of Images</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[1, 2, 3, 4].map((num) => (
                         <Button
                           key={num}
                           variant={numResults === num ? "default" : "outline"}
                           onClick={() => setNumResults(num)}
+                          className="text-sm sm:text-base"
                         >
                           {num}
                         </Button>
@@ -564,52 +567,57 @@ export default function ImageCreator() {
 
                   {/* Seed Control */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seed (Optional)</label>
-                    <div className="flex gap-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Seed (Optional)</label>
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="number"
                         value={seed || ''}
                         onChange={(e) => setSeed(e.target.value ? parseInt(e.target.value) : undefined)}
                         placeholder="Random seed..."
-                        className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="flex-1 p-2 sm:p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                       />
-                      <Button variant="outline" onClick={generateRandomSeed}>
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" onClick={clearSeed}>
-                        Clear
-                      </Button>
+                      <div className="flex gap-2 sm:gap-2">
+                        <Button variant="outline" onClick={generateRandomSeed} className="flex-1 sm:flex-none">
+                          <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="sm:hidden ml-2">Random</span>
+                        </Button>
+                        <Button variant="outline" onClick={clearSeed} className="flex-1 sm:flex-none text-xs sm:text-sm">
+                          Clear
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Use the same seed to reproduce results</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">Use the same seed to reproduce results</p>
                   </div>
 
                   {/* AI Enhancement Options */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">AI Enhancement Options</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">AI Enhancement Options</label>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-gray-900 dark:text-white">Prompt Enhancement</span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Let Bria AI enhance your prompt for better results</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-white">Prompt Enhancement</span>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 break-words">Let Bria AI enhance your prompt for better results</p>
                         </div>
                         <Button
                           variant={promptEnhancement ? "default" : "outline"}
                           size="sm"
                           onClick={() => setPromptEnhancement(!promptEnhancement)}
+                          className="w-full sm:w-auto min-w-[60px]"
                         >
                           {promptEnhancement ? 'ON' : 'OFF'}
                         </Button>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-gray-900 dark:text-white">Image Enhancement</span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Generate images with richer details and textures</p>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-sm sm:text-base text-gray-900 dark:text-white">Image Enhancement</span>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 break-words">Generate images with richer details and textures</p>
                         </div>
                         <Button
                           variant={enhanceImage ? "default" : "outline"}
                           size="sm"
                           onClick={() => setEnhanceImage(!enhanceImage)}
+                          className="w-full sm:w-auto min-w-[60px]"
                         >
                           {enhanceImage ? 'ON' : 'OFF'}
                         </Button>
@@ -619,14 +627,15 @@ export default function ImageCreator() {
 
                   {/* Aspect Ratio */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Aspect Ratio</label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Aspect Ratio</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {['1:1', '16:9', '9:16', '4:3', '3:4', '21:9'].map((ratio) => (
                         <Button
                           key={ratio}
                           variant={aspectRatio === ratio ? "default" : "outline"}
                           size="sm"
                           onClick={() => setAspectRatio(ratio)}
+                          className="text-xs sm:text-sm"
                         >
                           {ratio}
                         </Button>
@@ -650,9 +659,9 @@ export default function ImageCreator() {
           </div>
 
           {/* Right Column - Generated Image */}
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Generated Image</h3>
+          <div className="space-y-4 lg:space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Generated Image</h3>
               
               <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden relative group">
                 {generatedImage ? (
@@ -689,7 +698,7 @@ export default function ImageCreator() {
                         fill
                         className="object-cover transition-opacity group-hover:opacity-95"
                         onLoad={handleImageLoad}
-                        onError={handleImageError}
+                        onError={() => handleImageError()} 
                       />
                       
                       {/* Preview Button Overlay */}
@@ -720,26 +729,27 @@ export default function ImageCreator() {
               </div>
 
               {generatedImage && (
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+                  <div className="flex items-center gap-2 order-2 sm:order-1">
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       onClick={saveImage}
                       disabled={!user}
                       title={!user ? 'Please sign in to save images' : 'Save this image'}
+                      className="flex-1 sm:flex-none"
                     >
-                      <Heart className="h-4 w-4 mr-2" />
-                      Save
+                      <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                      <span className="text-xs sm:text-sm">Save</span>
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={copyImageUrl}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy URL
+                    <Button variant="ghost" size="sm" onClick={copyImageUrl} className="flex-1 sm:flex-none">
+                      <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                      <span className="text-xs sm:text-sm">Copy URL</span>
                     </Button>
                   </div>
-                  <Button onClick={downloadImage}>
+                  <Button onClick={downloadImage} className="w-full sm:w-auto order-1 sm:order-2">
                     <Download className="h-4 w-4 mr-2" />
-                    Download
+                    <span className="text-sm sm:text-base">Download</span>
                   </Button>
                 </div>
               )}
@@ -775,9 +785,9 @@ export default function ImageCreator() {
           </div>
 
           {/* Third Column - Saved Images */}
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Saved Images</h3>
+          <div className="space-y-4 lg:space-y-6 lg:col-span-1 xl:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Saved Images</h3>
               
               {loadingImages ? (
                 <div className="text-center py-8">
@@ -793,7 +803,7 @@ export default function ImageCreator() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="space-y-3 sm:space-y-4 max-h-80 sm:max-h-96 overflow-y-auto">
                   {savedImages.map((savedImage) => (
                     <div
                       key={savedImage.id}
@@ -821,23 +831,23 @@ export default function ImageCreator() {
                           </Button>
                         </div>
                       </div>
-                      <div className="p-3">
-                        <p className="text-sm text-gray-900 dark:text-white mb-2 line-clamp-2 leading-relaxed">
+                      <div className="p-2 sm:p-3">
+                        <p className="text-xs sm:text-sm text-gray-900 dark:text-white mb-2 line-clamp-2 leading-relaxed break-words">
                           {savedImage.prompt}
                         </p>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
-                          <span>{savedImage.modelType.toUpperCase()} v{savedImage.modelVersion}</span>
-                          <span>{savedImage.aspectRatio}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                          <span className="truncate">{savedImage.modelType.toUpperCase()} v{savedImage.modelVersion}</span>
+                          <span className="truncate">{savedImage.aspectRatio}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
-                          <span>{savedImage.settings.qualitySetting}</span>
-                          {savedImage.seed && <span>Seed: {savedImage.seed}</span>}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                          <span className="truncate">{savedImage.settings.qualitySetting}</span>
+                          {savedImage.seed && <span className="truncate">Seed: {savedImage.seed}</span>}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate order-2 sm:order-1">
                             {savedImage.createdAt ? new Date(savedImage.createdAt).toLocaleDateString() : ''}
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 order-1 sm:order-2">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -857,7 +867,7 @@ export default function ImageCreator() {
                                 setNegativePrompt(savedImage.settings.negativePrompt || '');
                                 toast.success('Settings restored!');
                               }}
-                              className="text-xs px-2 py-1 h-7"
+                              className="text-xs px-1 sm:px-2 py-1 h-6 sm:h-7 flex-1 sm:flex-none"
                             >
                               Use
                             </Button>
@@ -868,7 +878,7 @@ export default function ImageCreator() {
                                 navigator.clipboard.writeText(savedImage.imageUrl);
                                 toast.success('URL copied!');
                               }}
-                              className="text-xs px-2 py-1 h-7"
+                              className="text-xs px-1 sm:px-2 py-1 h-6 sm:h-7 flex-1 sm:flex-none"
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
@@ -876,7 +886,7 @@ export default function ImageCreator() {
                               size="sm"
                               variant="ghost"
                               onClick={() => removeImage(savedImage.id)}
-                              className="text-xs px-2 py-1 h-7 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                              className="text-xs px-1 sm:px-2 py-1 h-6 sm:h-7 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex-1 sm:flex-none"
                             >
                               Remove
                             </Button>
