@@ -28,11 +28,11 @@ import {
   Plus,
   Minus,
   Globe,
-  Zap
+  Zap,
+  Wand2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { detectLanguage } from '@/lib/utils/language';
-import { generateSocialContent } from '@/lib/apis/gemini';
 import { saveSocialPostToFirestore, SocialPost } from '@/lib/services/social-posts';
 
 const platforms = [
@@ -120,6 +120,10 @@ export default function SocialCreator() {
   // UI state
   const [currentTab, setCurrentTab] = useState<'create' | 'history'>('create');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Enhancement state
+  const [isEnhancingTopic, setIsEnhancingTopic] = useState(false);
+  const [isEnhancingInstructions, setIsEnhancingInstructions] = useState(false);
 
   // Auto-detect language when topic changes
   useEffect(() => {
@@ -165,18 +169,33 @@ export default function SocialCreator() {
     setIsGenerating(true);
     
     try {
-      // Generate content using enhanced Gemini API
-      const generatedContent = await generateSocialContent(
-        topic, 
-        selectedPlatforms,
-        {
+      // Generate content using API route
+      const response = await fetch('/api/generate-social', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic,
+          platforms: selectedPlatforms,
           contentType,
           tone,
           customInstructions: customInstructions.trim() || undefined,
-          detectedLanguage,
           languageOverride,
-        }
-      );
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate social content');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.details || 'Failed to generate content');
+      }
+
+      const generatedContent = result.data.generatedContent;
       
       // Transform to match expected format
       const newPosts: {[key: string]: any} = {};
@@ -229,7 +248,7 @@ export default function SocialCreator() {
           tone,
           customInstructions: customInstructions.trim() || undefined,
           detectedLanguage,
-          languageOverride,
+          languageOverride: languageOverride || null,
           selectedPlatforms
         }
       });
@@ -282,6 +301,89 @@ export default function SocialCreator() {
     });
     toast.success(`Hashtag "${tag}" added!`);
   }
+
+  const enhanceTopic = async () => {
+    if (!topic.trim()) {
+      toast.error('Please enter a topic first');
+      return;
+    }
+
+    if (selectedPlatforms.length === 0) {
+      toast.error('Please select at least one platform');
+      return;
+    }
+
+    setIsEnhancingTopic(true);
+    
+    try {
+      const response = await fetch('/api/enhance-input', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: topic,
+          platform: selectedPlatforms[0], // Use the first selected platform for enhancement
+          inputType: 'topic'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to enhance topic');
+      }
+
+      const result = await response.json();
+      setTopic(result.enhancedInput);
+      toast.success('Topic enhanced successfully!');
+    } catch (error) {
+      console.error('Error enhancing topic:', error);
+      toast.error('Failed to enhance topic. Please try again.');
+    } finally {
+      setIsEnhancingTopic(false);
+    }
+  };
+
+  const enhanceInstructions = async () => {
+    if (!customInstructions.trim()) {
+      toast.error('Please enter instructions first');
+      return;
+    }
+
+    if (selectedPlatforms.length === 0) {
+      toast.error('Please select at least one platform');
+      return;
+    }
+
+    setIsEnhancingInstructions(true);
+    
+    try {
+      const response = await fetch('/api/enhance-input', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: customInstructions,
+          platform: selectedPlatforms[0], // Use the first selected platform for enhancement
+          inputType: 'instructions'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to enhance instructions');
+      }
+
+      const result = await response.json();
+      setCustomInstructions(result.enhancedInput);
+      toast.success('Instructions enhanced successfully!');
+    } catch (error) {
+      console.error('Error enhancing instructions:', error);
+      toast.error('Failed to enhance instructions. Please try again.');
+    } finally {
+      setIsEnhancingInstructions(false);
+    }
+  };
+
   // Legacy functions removed - using new enhanced functionality
 
   return (
@@ -402,9 +504,26 @@ export default function SocialCreator() {
               <div className="space-y-4">
                 {/* Topic */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Topic/Subject
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Topic/Subject
+                    </label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={enhanceTopic}
+                      disabled={isEnhancingTopic || !topic.trim() || selectedPlatforms.length === 0}
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                    >
+                      {isEnhancingTopic ? (
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4 mr-1" />
+                      )}
+                      {isEnhancingTopic ? 'Enhancing...' : 'Enhance with AI'}
+                    </Button>
+                  </div>
                   <textarea
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
@@ -469,9 +588,26 @@ export default function SocialCreator() {
 
                 {/* Custom Instructions */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Additional Instructions (Optional)
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Additional Instructions (Optional)
+                    </label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={enhanceInstructions}
+                      disabled={isEnhancingInstructions || !customInstructions.trim() || selectedPlatforms.length === 0}
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                    >
+                      {isEnhancingInstructions ? (
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4 mr-1" />
+                      )}
+                      {isEnhancingInstructions ? 'Enhancing...' : 'Enhance with AI'}
+                    </Button>
+                  </div>
                   <textarea
                     value={customInstructions}
                     onChange={(e) => setCustomInstructions(e.target.value)}

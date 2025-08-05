@@ -1,0 +1,602 @@
+'use client';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { 
+  X, 
+  ZoomIn, 
+  ZoomOut, 
+  RotateCcw, 
+  Download, 
+  ArrowLeft, 
+  ArrowRight,
+  Copy,
+  Maximize2,
+  Minimize2
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { UniversalImage, isSVGUrl } from './UniversalImage';
+
+interface ImageData {
+  id: string;
+  imageUrl: string;
+  prompt: string;
+  modelType?: string;
+  createdAt?: string;
+}
+
+interface ImprovedImageModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  images: ImageData[];
+  currentIndex: number;
+  onIndexChange?: (index: number) => void;
+}
+
+const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 6];
+const DEFAULT_ZOOM_INDEX = 3; // 100%
+
+export function ImprovedImageModal({ 
+  isOpen, 
+  onClose, 
+  images, 
+  currentIndex, 
+  onIndexChange 
+}: ImprovedImageModalProps) {
+  const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [lastTouchDistance, setLastTouchDistance] = useState(0);
+  const [initialTouchCenter, setInitialTouchCenter] = useState({ x: 0, y: 0 });
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [showSubtleArrows, setShowSubtleArrows] = useState(false);
+  
+  const modalRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  const currentImage = images[currentIndex];
+  const currentZoom = ZOOM_LEVELS[zoomIndex];
+  const canZoomIn = zoomIndex < ZOOM_LEVELS.length - 1;
+  const canZoomOut = zoomIndex > 0;
+  const canGoPrevious = currentIndex > 0;
+  const canGoNext = currentIndex < images.length - 1;
+
+  // Reset zoom and position when modal opens or image changes
+  useEffect(() => {
+    if (isOpen) {
+      setZoomIndex(DEFAULT_ZOOM_INDEX);
+      setImageLoaded(false);
+      setImagePosition({ x: 0, y: 0 });
+      setIsDragging(false);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, currentIndex]);
+
+  // Keyboard navigation and zoom
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      switch (e.key) {
+        case 'Escape':
+          onClose();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (canGoPrevious) goToPrevious();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (canGoNext) goToNext();
+          break;
+        case '+':
+        case '=':
+          e.preventDefault();
+          if (canZoomIn) handleZoomIn();
+          break;
+        case '-':
+          e.preventDefault();
+          if (canZoomOut) handleZoomOut();
+          break;
+        case '0':
+          e.preventDefault();
+          resetZoom();
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, canGoPrevious, canGoNext, canZoomIn, canZoomOut]);
+
+  // Mouse wheel zoom
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (!isOpen || !imageContainerRef.current?.contains(e.target as Node)) return;
+      
+      e.preventDefault();
+      
+      if (e.deltaY < 0 && canZoomIn) {
+        handleZoomIn(e.clientX, e.clientY);
+      } else if (e.deltaY > 0 && canZoomOut) {
+        handleZoomOut(e.clientX, e.clientY);
+      }
+    };
+
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleWheel);
+  }, [isOpen, canZoomIn, canZoomOut, zoomIndex]);
+
+  // Mouse movement tracking for subtle arrow reveals
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isOpen) return;
+      
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      
+      // Show subtle arrows when mouse is near edges
+      const windowWidth = window.innerWidth;
+      const edgeThreshold = 150;
+      const nearLeftEdge = e.clientX < edgeThreshold;
+      const nearRightEdge = e.clientX > windowWidth - edgeThreshold;
+      
+      setShowSubtleArrows(nearLeftEdge || nearRightEdge);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, [isOpen]);
+
+  const goToPrevious = useCallback(() => {
+    if (canGoPrevious) {
+      const newIndex = currentIndex - 1;
+      onIndexChange?.(newIndex);
+    }
+  }, [canGoPrevious, currentIndex, onIndexChange]);
+
+  const goToNext = useCallback(() => {
+    if (canGoNext) {
+      const newIndex = currentIndex + 1;
+      onIndexChange?.(newIndex);
+    }
+  }, [canGoNext, currentIndex, onIndexChange]);
+
+  const handleZoomIn = (centerX?: number, centerY?: number) => {
+    if (canZoomIn) {
+      const newZoomIndex = zoomIndex + 1;
+      const newZoom = ZOOM_LEVELS[newZoomIndex];
+      const oldZoom = currentZoom;
+      
+      if (centerX !== undefined && centerY !== undefined && imageContainerRef.current) {
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const offsetX = centerX - rect.left - rect.width / 2;
+        const offsetY = centerY - rect.top - rect.height / 2;
+        
+        setImagePosition({
+          x: imagePosition.x - offsetX * (newZoom - oldZoom) / oldZoom,
+          y: imagePosition.y - offsetY * (newZoom - oldZoom) / oldZoom,
+        });
+      }
+      
+      setZoomIndex(newZoomIndex);
+    }
+  };
+
+  const handleZoomOut = (centerX?: number, centerY?: number) => {
+    if (canZoomOut) {
+      const newZoomIndex = zoomIndex - 1;
+      const newZoom = ZOOM_LEVELS[newZoomIndex];
+      const oldZoom = currentZoom;
+      
+      if (centerX !== undefined && centerY !== undefined && imageContainerRef.current) {
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const offsetX = centerX - rect.left - rect.width / 2;
+        const offsetY = centerY - rect.top - rect.height / 2;
+        
+        setImagePosition({
+          x: imagePosition.x - offsetX * (newZoom - oldZoom) / oldZoom,
+          y: imagePosition.y - offsetY * (newZoom - oldZoom) / oldZoom,
+        });
+      }
+      
+      setZoomIndex(newZoomIndex);
+    }
+  };
+
+  const resetZoom = () => {
+    setZoomIndex(DEFAULT_ZOOM_INDEX);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const toggleFullscreen = async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await modalRef.current?.requestFullscreen();
+        setIsFullscreen(true);
+      } catch (error) {
+        console.error('Error entering fullscreen:', error);
+      }
+    } else {
+      try {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      } catch (error) {
+        console.error('Error exiting fullscreen:', error);
+      }
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!currentImage) return;
+
+    setIsDownloading(true);
+    try {
+      if (isSVGUrl(currentImage.imageUrl)) {
+        const response = await fetch(currentImage.imageUrl);
+        const svgContent = await response.text();
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `generated-vector-${currentImage.id}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const response = await fetch(currentImage.imageUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `generated-image-${currentImage.id}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+      
+      toast.success('Image downloaded successfully!');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download image');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleCopyUrl = () => {
+    if (currentImage?.imageUrl) {
+      navigator.clipboard.writeText(currentImage.imageUrl);
+      toast.success('Image URL copied to clipboard!');
+    }
+  };
+
+  // Mouse drag handling
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (currentZoom > 1) {
+      e.preventDefault();
+      setIsDragging(true);
+      setDragStart({ 
+        x: e.clientX - imagePosition.x, 
+        y: e.clientY - imagePosition.y 
+      });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && currentZoom > 1) {
+      e.preventDefault();
+      setImagePosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  // Touch handling for mobile
+  const getTouchDistance = (touch1: Touch, touch2: Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getTouchCenter = (touch1: Touch, touch2: Touch) => ({
+    x: (touch1.clientX + touch2.clientX) / 2,
+    y: (touch1.clientY + touch2.clientY) / 2,
+  });
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && currentZoom > 1) {
+      // Single touch - start dragging
+      const touch = e.touches[0];
+      setIsDragging(true);
+      setDragStart({ 
+        x: touch.clientX - imagePosition.x, 
+        y: touch.clientY - imagePosition.y 
+      });
+    } else if (e.touches.length === 2) {
+      // Two fingers - pinch zoom
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      setLastTouchDistance(distance);
+      setInitialTouchCenter(center);
+      setIsDragging(false);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging && currentZoom > 1) {
+      // Single touch drag
+      e.preventDefault();
+      const touch = e.touches[0];
+      setImagePosition({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y,
+      });
+    } else if (e.touches.length === 2) {
+      // Pinch zoom
+      e.preventDefault();
+      const distance = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      
+      if (lastTouchDistance > 0) {
+        const scale = distance / lastTouchDistance;
+        
+        if (scale > 1.1 && canZoomIn) {
+          handleZoomIn(center.x, center.y);
+          setLastTouchDistance(distance);
+        } else if (scale < 0.9 && canZoomOut) {
+          handleZoomOut(center.x, center.y);
+          setLastTouchDistance(distance);
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      setIsDragging(false);
+      setLastTouchDistance(0);
+    }
+  };
+
+  if (!isOpen || !currentImage) return null;
+
+  return (
+    <div 
+      ref={modalRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      {/* Large Navigation Arrows */}
+      {canGoPrevious && (
+        <Button
+          variant="ghost"
+          size="lg"
+          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 text-white border-none h-16 w-16 rounded-full shadow-2xl"
+          onClick={goToPrevious}
+        >
+          <ArrowLeft className="h-8 w-8" />
+        </Button>
+      )}
+
+      {canGoNext && (
+        <Button
+          variant="ghost"
+          size="lg"
+          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 text-white border-none h-16 w-16 rounded-full shadow-2xl"
+          onClick={goToNext}
+        >
+          <ArrowRight className="h-8 w-8" />
+        </Button>
+      )}
+
+      {/* Gallery-Style Subtle Navigation Areas */}
+      {canGoPrevious && (
+        <div 
+          className="absolute left-0 top-0 bottom-0 w-40 z-15 group cursor-pointer" 
+          onClick={goToPrevious}
+        >
+          <div className={`absolute left-3 top-1/2 -translate-y-1/2 transition-all duration-300 ${
+            showSubtleArrows && mousePosition.x < 150 ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'
+          }`}>
+            <div className="bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full p-2.5 shadow-xl transition-all duration-200 hover:scale-110 border border-white/20 hover:border-white/30">
+              <ArrowLeft className="h-4 w-4 text-white drop-shadow-lg" />
+            </div>
+          </div>
+          {/* Enhanced gradient hint */}
+          <div className={`absolute left-0 top-1/4 bottom-1/4 w-2 bg-gradient-to-r from-white/8 via-white/4 to-transparent rounded-r transition-opacity duration-300 ${
+            showSubtleArrows && mousePosition.x < 150 ? 'opacity-60' : 'opacity-0 group-hover:opacity-40'
+          }`}></div>
+        </div>
+      )}
+
+      {canGoNext && (
+        <div 
+          className="absolute right-0 top-0 bottom-0 w-40 z-15 group cursor-pointer" 
+          onClick={goToNext}
+        >
+          <div className={`absolute right-3 top-1/2 -translate-y-1/2 transition-all duration-300 ${
+            showSubtleArrows && (typeof window !== 'undefined' && mousePosition.x > window.innerWidth - 150) ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'
+          }`}>
+            <div className="bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full p-2.5 shadow-xl transition-all duration-200 hover:scale-110 border border-white/20 hover:border-white/30">
+              <ArrowRight className="h-4 w-4 text-white drop-shadow-lg" />
+            </div>
+          </div>
+          {/* Enhanced gradient hint */}
+          <div className={`absolute right-0 top-1/4 bottom-1/4 w-2 bg-gradient-to-l from-white/8 via-white/4 to-transparent rounded-l transition-opacity duration-300 ${
+            showSubtleArrows && (typeof window !== 'undefined' && mousePosition.x > window.innerWidth - 150) ? 'opacity-60' : 'opacity-0 group-hover:opacity-40'
+          }`}></div>
+        </div>
+      )}
+
+      {/* Top Controls */}
+      <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-10">
+        <div className="flex items-center gap-3 bg-black/60 rounded-full px-4 py-2 backdrop-blur-sm">
+          <span className="text-white text-sm font-medium">
+            {currentIndex + 1} / {images.length}
+          </span>
+          {currentImage.modelType && (
+            <span className="text-white/80 text-xs px-3 py-1 bg-white/10 rounded-full">
+              {currentImage.modelType}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-1 bg-black/60 rounded-full px-3 py-2 backdrop-blur-sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+              onClick={() => handleZoomOut()}
+              disabled={!canZoomOut}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            
+            <span className="text-white text-sm min-w-[3.5rem] text-center font-medium">
+              {Math.round(currentZoom * 100)}%
+            </span>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+              onClick={() => handleZoomIn()}
+              disabled={!canZoomIn}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+              onClick={resetZoom}
+              disabled={currentZoom === 1 && imagePosition.x === 0 && imagePosition.y === 0}
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Action Controls */}
+          <div className="flex items-center gap-1 bg-black/60 rounded-full px-3 py-2 backdrop-blur-sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+              onClick={toggleFullscreen}
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+              onClick={handleDownload}
+              disabled={isDownloading}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+              onClick={handleCopyUrl}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Close Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20 bg-black/60 rounded-full h-12 w-12 p-0 backdrop-blur-sm"
+            onClick={onClose}
+          >
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Image Container */}
+      <div 
+        ref={imageContainerRef}
+        className="relative max-w-[85vw] max-h-[85vh] overflow-hidden"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ 
+          cursor: currentZoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+          touchAction: 'none'
+        }}
+      >
+        <div
+          className="transition-transform duration-200 ease-out select-none"
+          style={{
+            transform: `scale(${currentZoom}) translate(${imagePosition.x / currentZoom}px, ${imagePosition.y / currentZoom}px)`,
+            transformOrigin: 'center center'
+          }}
+        >
+          <UniversalImage
+            src={currentImage.imageUrl}
+            alt="Generated image"
+            width={800}
+            height={600}
+            className="max-w-full max-h-[80vh] object-contain block"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              console.error('Failed to load image:', currentImage.imageUrl);
+              toast.error('Failed to load image');
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Loading State */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+          <div className="text-white text-lg font-medium">Loading image...</div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Help */}
+      <div className="absolute bottom-6 right-6 text-white/60 text-xs bg-black/40 rounded-lg px-3 py-2 backdrop-blur-sm">
+        <div>ESC • ←/→ • Wheel/+/- • 0 Reset • F Fullscreen</div>
+      </div>
+    </div>
+  );
+}

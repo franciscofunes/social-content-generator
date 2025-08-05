@@ -1,5 +1,5 @@
 import MainLayout from '@/components/layout/MainLayout';
-import { ImageGallery } from '@/components/cloudinary/ImageGallery';
+import { FirestoreImageGallery } from '@/components/gallery/FirestoreImageGallery';
 
 export default function GalleryPage() {
   return (
@@ -13,7 +13,7 @@ export default function GalleryPage() {
             </p>
           </div>
           
-          <ImageGallery />
+          <FirestoreImageGallery />
         </div>
       </div>
     </MainLayout>
