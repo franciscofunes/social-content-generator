@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user owns a session
+    function isSessionOwner(sessionId) {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/chat_sessions/$(sessionId)) &&
+             get(/databases/$(database)/documents/chat_sessions/$(sessionId)).data.userId == request.auth.uid;
+    }
+    
+    // Helper function for anonymous user support (temporary)
+    function isAnonymousUser() {
+      return request.resource.data.userId == 'anonymous-user' || 
+             resource.data.userId == 'anonymous-user';
+    }
+    
+    // Legacy collections (maintain existing access for now)
+    match /topics/{document} {
+      allow read, write: if true;
+    }
+    match /daily_content/{document} {
+      allow read, write: if true;
+      match /posts/{postId} {
+        allow read, write: if true;
+      }
+    }
+    match /content_history/{document} {
+      allow read, write: if true;
+    }
+    
+    // User profiles - users can only access their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && 
+                   request.auth.uid == userId &&
+                   request.resource.data.uid == userId;
+      
+      // User's conversations
+      match /conversations/{conversationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Messages within conversations
+        match /messages/{messageId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+      
+      // User's generated content
+      match /generations/{generationId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // User's Bria AI generated images
+      match /images/{imageId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.data.userId == userId;
+      }
+      
+      // User's saved prompts
+      match /prompts/{promptId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.data.userId == userId;
+      }
+    }
+    
+    // Chat Sessions - Users can only access their own sessions
+    match /chat_sessions/{sessionId} {
+      allow read: if request.auth != null && 
+                 (resource.data.userId == request.auth.uid || isAnonymousUser());
+      allow create: if request.auth != null && 
+                   request.resource.data.userId == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['userId', 'title', 'generationType']);
+      allow update: if request.auth != null && 
+                   resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && 
+                   resource.data.userId == request.auth.uid;
+      
+      // Allow anonymous access temporarily for migration
+      allow read, write: if isAnonymousUser();
+    }
+    
+    // Chat Messages - Users can only access messages in their sessions
+    match /chat_messages/{messageId} {
+      allow read: if request.auth != null && 
+                 isSessionOwner(resource.data.sessionId);
+      allow create: if request.auth != null && 
+                   request.resource.data.keys().hasAll(['sessionId', 'type', 'content', 'generationType']) &&
+                   request.resource.data.type in ['user', 'assistant'] &&
+                   request.resource.data.generationType in ['prompt', 'image', 'social'] &&
+                   isSessionOwner(request.resource.data.sessionId);
+      allow update: if request.auth != null && 
+                   isSessionOwner(resource.data.sessionId);
+      allow delete: if request.auth != null && 
+                   isSessionOwner(resource.data.sessionId);
+      
+      // Allow anonymous access temporarily for migration
+      allow read, write: if request.resource.data.get('sessionId', resource.data.get('sessionId', '')) != '' &&
+                          exists(/databases/$(database)/documents/chat_sessions/$(request.resource.data.get('sessionId', resource.data.get('sessionId', '')))) &&
+                          get(/databases/$(database)/documents/chat_sessions/$(request.resource.data.get('sessionId', resource.data.get('sessionId', '')))).data.userId == 'anonymous-user';
+    }
+    
+    // User preferences
+    match /user_preferences/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Session analytics (read-only for users, write for system)
+    match /session_analytics/{document} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only allow through admin SDK
+    }
+  }
+}

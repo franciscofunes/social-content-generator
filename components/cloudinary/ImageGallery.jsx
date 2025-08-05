@@ -1,0 +1,362 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  Trash2, 
+  Eye, 
+  Grid3X3, 
+  List,
+  Calendar,
+  Tag,
+  Loader2,
+  RefreshCw
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { ImageModal } from '@/components/ui/ImageModal';
+
+export function ImageGallery({ className = '' }) {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at:desc');
+
+  const loadImages = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        limit: '50',
+        sortBy,
+      });
+
+      if (filterType !== 'all') {
+        params.append('generationType', filterType);
+      }
+
+      const response = await fetch(`/api/cloudinary/images?${params}`);
+      const result = await response.json();
+
+      if (result.success) {
+        setImages(result.data.images || []);
+      } else {
+        throw new Error(result.error || 'Failed to load images');
+      }
+    } catch (error) {
+      console.error('Error loading images:', error);
+      toast.error('Failed to load images');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadImages();
+  }, [filterType, sortBy]);
+
+  const handleImageClick = (image) => {
+    setSelectedImage(image);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteImage = async (publicId) => {
+    if (!confirm('Are you sure you want to delete this image?')) return;
+
+    try {
+      const response = await fetch(`/api/cloudinary/images?publicId=${encodeURIComponent(publicId)}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Image deleted successfully');
+        setImages(prev => prev.filter(img => img.publicId !== publicId));
+      } else {
+        throw new Error(result.error || 'Delete failed');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete image');
+    }
+  };
+
+  const handleDownloadImage = async (imageUrl, publicId) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${publicId.split('/').pop()}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Image downloaded!');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Download failed');
+    }
+  };
+
+  const filteredImages = images.filter(image => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    const metadata = image.metadata || {};
+    
+    return (
+      image.publicId.toLowerCase().includes(searchLower) ||
+      (metadata.prompt_used && metadata.prompt_used.toLowerCase().includes(searchLower)) ||
+      (image.tags && image.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+    );
+  });
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getImagePrompt = (image) => {
+    return image.metadata?.prompt_used || 'No prompt available';
+  };
+
+  return (
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${className}`}>
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Image Gallery</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {filteredImages.length} of {images.length} images
+            </p>
+          </div>
+          <Button onClick={loadImages} variant="ghost" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search images, prompts, or tags..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Filter by Type */}
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Types</option>
+            <option value="image">Generated</option>
+            <option value="manual_upload">Uploaded</option>
+          </select>
+
+          {/* Sort */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="created_at:desc">Newest First</option>
+            <option value="created_at:asc">Oldest First</option>
+          </select>
+
+          {/* View Mode */}
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="rounded-none"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="rounded-none border-l border-gray-300"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <span className="ml-2 text-gray-600">Loading images...</span>
+          </div>
+        ) : filteredImages.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Grid3X3 className="h-12 w-12 mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No images found</h3>
+            <p className="text-gray-600">
+              {searchTerm || filterType !== 'all' 
+                ? 'Try adjusting your search or filters' 
+                : 'Start by generating or uploading some images'
+              }
+            </p>
+          </div>
+        ) : viewMode === 'grid' ? (
+          /* Grid View */
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredImages.map((image) => (
+              <div
+                key={image.publicId}
+                className="group relative bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer hover:shadow-lg transition-all duration-200"
+                onClick={() => handleImageClick(image)}
+              >
+                <Image
+                  src={image.url}
+                  alt={getImagePrompt(image)}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-200"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                />
+                
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <p className="text-white text-xs line-clamp-2 mb-2">
+                      {getImagePrompt(image)}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/80 text-xs">
+                        {formatDate(image.createdAt)}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 hover:bg-white/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadImage(image.url, image.publicId);
+                          }}
+                        >
+                          <Download className="h-3 w-3 text-white" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0 hover:bg-red-500/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteImage(image.publicId);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3 text-white" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* List View */
+          <div className="space-y-4">
+            {filteredImages.map((image) => (
+              <div
+                key={image.publicId}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                  <Image
+                    src={image.url}
+                    alt={getImagePrompt(image)}
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {image.publicId.split('/').pop()}
+                  </p>
+                  <p className="text-xs text-gray-600 line-clamp-2 mt-1">
+                    {getImagePrompt(image)}
+                  </p>
+                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <span>{image.width} × {image.height}</span>
+                    <span>{(image.bytes / 1024).toFixed(1)} KB</span>
+                    <span>{formatDate(image.createdAt)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleImageClick(image)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDownloadImage(image.url, image.publicId)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleDeleteImage(image.publicId)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedImage(null);
+          }}
+          imageUrl={selectedImage.url}
+          promptUsed={getImagePrompt(selectedImage)}
+        />
+      )}
+    </div>
+  );
+}
