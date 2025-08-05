@@ -3,9 +3,5 @@
     "app/api/**/*.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "GEMINI_API_KEY": "@gemini_api_key",
-    "BRIA_AI_API_KEY": "@bria_ai_api_key"
   }
 }

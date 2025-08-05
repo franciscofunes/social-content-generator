@@ -273,6 +273,15 @@ export default function SocialCreator() {
     toast.success('Post loaded for editing!');
   };
 
+  function addHashtag(tag: string): void {
+    setSelectedHashtags(prev => {
+      if (!prev.includes(tag)) {
+        return [...prev, tag];
+      }
+      return prev;
+    });
+    toast.success(`Hashtag "${tag}" added!`);
+  }
   // Legacy functions removed - using new enhanced functionality
 
   return (
