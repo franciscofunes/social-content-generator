@@ -108,6 +108,7 @@ export default function SocialCreator() {
   const [contentType, setContentType] = useState('promotional');
   const [tone, setTone] = useState('professional');
   const [topic, setTopic] = useState('');
+  const [content, setContent] = useState('');
   const [customInstructions, setCustomInstructions] = useState('');
   const [generatedPosts, setGeneratedPosts] = useState<{[key: string]: any}>({});
   const [isGenerating, setIsGenerating] = useState(false);
@@ -123,15 +124,17 @@ export default function SocialCreator() {
   
   // Enhancement state
   const [isEnhancingTopic, setIsEnhancingTopic] = useState(false);
+  const [isEnhancingContent, setIsEnhancingContent] = useState(false);
   const [isEnhancingInstructions, setIsEnhancingInstructions] = useState(false);
 
-  // Auto-detect language when topic changes
+  // Auto-detect language when topic or content changes
   useEffect(() => {
-    if (topic.trim()) {
-      const detected = detectLanguage(topic);
+    const textToAnalyze = content.trim() || topic.trim();
+    if (textToAnalyze) {
+      const detected = detectLanguage(textToAnalyze);
       setDetectedLanguage(detected);
     }
-  }, [topic]);
+  }, [topic, content]);
 
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms(prev => {
@@ -157,7 +160,12 @@ export default function SocialCreator() {
 
   const generatePosts = async () => {
     if (!topic.trim()) {
-      toast.error('Please enter a topic for your post');
+      toast.error('Please enter a topic/subject for your post');
+      return;
+    }
+
+    if (!content.trim()) {
+      toast.error('Please enter the content/message for your post');
       return;
     }
 
@@ -177,6 +185,7 @@ export default function SocialCreator() {
         },
         body: JSON.stringify({
           topic,
+          content,
           platforms: selectedPlatforms,
           contentType,
           tone,
@@ -241,6 +250,7 @@ export default function SocialCreator() {
     try {
       await saveSocialPostToFirestore({
         prompt: topic.trim(),
+        content: content.trim() || undefined,
         userId: user.uid,
         generatedContent,
         settings: {
@@ -248,7 +258,7 @@ export default function SocialCreator() {
           tone,
           customInstructions: customInstructions.trim() || undefined,
           detectedLanguage,
-          languageOverride: languageOverride || null,
+          languageOverride: languageOverride || undefined,
           selectedPlatforms
         }
       });
@@ -265,6 +275,7 @@ export default function SocialCreator() {
   const handleEditPost = (post: SocialPost) => {
     // Load post data into the form
     setTopic(post.prompt);
+    setContent(post.content || '');
     setContentType(post.settings.contentType);
     setTone(post.settings.tone);
     setCustomInstructions(post.settings.customInstructions || '');
@@ -324,7 +335,8 @@ export default function SocialCreator() {
         body: JSON.stringify({
           input: topic,
           platform: selectedPlatforms[0], // Use the first selected platform for enhancement
-          inputType: 'topic'
+          inputType: 'topic',
+          language: languageOverride || detectedLanguage
         }),
       });
 
@@ -340,6 +352,48 @@ export default function SocialCreator() {
       toast.error('Failed to enhance topic. Please try again.');
     } finally {
       setIsEnhancingTopic(false);
+    }
+  };
+
+  const enhanceContent = async () => {
+    if (!content.trim()) {
+      toast.error('Please enter content first');
+      return;
+    }
+
+    if (selectedPlatforms.length === 0) {
+      toast.error('Please select at least one platform');
+      return;
+    }
+
+    setIsEnhancingContent(true);
+    
+    try {
+      const response = await fetch('/api/enhance-input', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: content,
+          platform: selectedPlatforms[0], // Use the first selected platform for enhancement
+          inputType: 'content',
+          language: languageOverride || detectedLanguage
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to enhance content');
+      }
+
+      const result = await response.json();
+      setContent(result.enhancedInput);
+      toast.success('Content enhanced successfully!');
+    } catch (error) {
+      console.error('Error enhancing content:', error);
+      toast.error('Failed to enhance content. Please try again.');
+    } finally {
+      setIsEnhancingContent(false);
     }
   };
 
@@ -365,7 +419,8 @@ export default function SocialCreator() {
         body: JSON.stringify({
           input: customInstructions,
           platform: selectedPlatforms[0], // Use the first selected platform for enhancement
-          inputType: 'instructions'
+          inputType: 'instructions',
+          language: languageOverride || detectedLanguage
         }),
       });
 
@@ -524,13 +579,44 @@ export default function SocialCreator() {
                       {isEnhancingTopic ? 'Enhancing...' : 'Enhance with AI'}
                     </Button>
                   </div>
-                  <textarea
+                  <input
+                    type="text"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    placeholder="Describe what you want to post about... The more detail, the better!"
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none h-20"
+                    placeholder="Enter the topic/subject (e.g., 'New Product Launch', 'Digital Marketing Tips')"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
-                  {topic.trim() && (
+                </div>
+
+                {/* Content/Message */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Content/Message
+                    </label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={enhanceContent}
+                      disabled={isEnhancingContent || !content.trim() || selectedPlatforms.length === 0}
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                    >
+                      {isEnhancingContent ? (
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4 mr-1" />
+                      )}
+                      {isEnhancingContent ? 'Enhancing...' : 'Enhance with AI'}
+                    </Button>
+                  </div>
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Describe what you want to say about this topic... Include details, benefits, questions, or key points you want to highlight."
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none h-24"
+                  />
+                  {(topic.trim() || content.trim()) && (
                     <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <Globe className="h-3 w-3" />
                       <span>Detected language: {detectedLanguage}</span>

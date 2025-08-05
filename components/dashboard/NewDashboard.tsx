@@ -1,7 +1,8 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getDashboardStats, DashboardStats } from '@/lib/dashboard-stats';
 import { Button } from '@/components/ui/button';
 import { 
   MessageSquare, 
@@ -18,6 +19,31 @@ import {
 
 export default function NewDashboard() {
   const { user, userProfile } = useAuth();
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
+    promptsGenerated: 0,
+    imagesCreated: 0,
+    socialPostsCreated: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  // Load dashboard statistics
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user) return;
+      
+      setStatsLoading(true);
+      try {
+        const stats = await getDashboardStats(user.uid);
+        setDashboardStats(stats);
+      } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    loadStats();
+  }, [user]);
 
   const features = [
     {
@@ -50,9 +76,9 @@ export default function NewDashboard() {
   ];
 
   const stats = [
-    { label: 'Prompts Generated', value: userProfile?.usage?.promptsGenerated || 0, icon: MessageSquare },
-    { label: 'Images Created', value: userProfile?.usage?.imagesCreated || 0, icon: ImageIcon },
-    { label: 'Social Posts', value: userProfile?.usage?.socialPostsCreated || 0, icon: Share2 },
+    { label: 'Prompts Generated', value: dashboardStats.promptsGenerated, icon: MessageSquare },
+    { label: 'Images Created', value: dashboardStats.imagesCreated, icon: ImageIcon },
+    { label: 'Social Posts', value: dashboardStats.socialPostsCreated, icon: Share2 },
   ];
 
   const quickActions = [
@@ -119,7 +145,13 @@ export default function NewDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.label}</p>
-                        <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+                          {statsLoading ? (
+                            <span className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded w-12 h-8 inline-block"></span>
+                          ) : (
+                            stat.value
+                          )}
+                        </p>
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
                         <Icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />

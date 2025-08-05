@@ -6,6 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { 
       topic, 
+      content,
       platforms = ['instagram', 'linkedin'],
       contentType = 'promotional',
       tone = 'professional',
@@ -21,6 +22,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!content || typeof content !== 'string') {
+      return NextResponse.json(
+        { error: 'Content is required and must be a string' },
+        { status: 400 }
+      );
+    }
+
     if (!Array.isArray(platforms) || platforms.length === 0) {
       return NextResponse.json(
         { error: 'At least one platform must be specified' },
@@ -29,20 +37,23 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Generating enhanced social content:', {
-      topic: topic.substring(0, 100) + '...',
+      topic: topic.substring(0, 50) + '...',
+      content: content.substring(0, 100) + '...',
       platforms,
       contentType,
       tone,
       languageOverride
     });
 
-    // Auto-detect language if not overridden
-    const detectedLanguage = detectLanguage(topic);
+    // Auto-detect language if not overridden (prioritize content over topic)
+    const textToAnalyze = content.trim() || topic.trim();
+    const detectedLanguage = detectLanguage(textToAnalyze);
     
     const generatedContent = await generateSocialContent(
       topic,
       platforms,
       {
+        content,
         contentType,
         tone,
         customInstructions,

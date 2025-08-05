@@ -429,6 +429,7 @@ export async function generateSocialContent(
   topic: string, 
   platforms: string[], 
   options: {
+    content?: string;
     contentType?: string;
     tone?: string;
     customInstructions?: string;
@@ -439,6 +440,7 @@ export async function generateSocialContent(
 ): Promise<{ [platform: string]: { text: string; hashtags: string[] } }> {
   
   const {
+    content,
     contentType = 'promotional',
     tone = 'professional',
     customInstructions = '',
@@ -500,7 +502,8 @@ CONTENT REQUIREMENTS:
 - Platform: ${platform.toUpperCase()}
 - Content Type: ${contentType}
 - Tone: ${tone}
-- Topic: "${topic}"
+- Topic/Subject: "${topic}"
+${content ? `- Main Content/Message: "${content}"` : ''}
 ${customInstructions ? `- Custom Instructions: ${customInstructions}` : ''}
 
 PLATFORM SPECIFICATIONS FOR ${platform.toUpperCase()}:
@@ -511,13 +514,15 @@ PLATFORM SPECIFICATIONS FOR ${platform.toUpperCase()}:
 
 ${imageUrl ? `VISUAL CONTENT: The post will include an image/visual: ${imageUrl}` : ''}
 
-CONTENT STRUCTURE:
-1. Engaging hook/opening
-2. Main content with valuable insights
-3. Call-to-action appropriate for the platform
-4. Relevant hashtags optimized for discoverability
+CONTENT CREATION INSTRUCTIONS:
+1. Use the topic as the main subject/theme
+2. Build the post around the provided content/message
+3. Create an engaging hook that relates to the topic
+4. Develop the main content with valuable insights about the message
+5. Add a call-to-action appropriate for the platform
+6. Include relevant hashtags for discoverability
 
-Generate comprehensive, longer content that maximizes the platform's potential while staying within limits.
+Generate comprehensive, engaging content that combines the topic and message effectively while staying within platform limits.
 
 Return ONLY valid JSON in this exact format:
 {
@@ -551,7 +556,7 @@ Return ONLY valid JSON in this exact format:
       }
       
       // Enhanced fallback content with multi-language support
-      results[platform] = generateFallbackContent(platform, topic, targetLanguage, contentType, tone);
+      results[platform] = generateFallbackContent(platform, topic, targetLanguage, contentType, tone, content);
     }
   }
 
@@ -564,96 +569,95 @@ function generateFallbackContent(
   topic: string, 
   language: string, 
   contentType: string, 
-  tone: string
+  tone: string,
+  content?: string
 ): { text: string; hashtags: string[] } {
   
   const languageTemplates = {
     en: {
       templates: {
         promotional: {
-          instagram: `🚀 Exciting news about ${topic}! 
+          instagram: `✨ ${topic}
 
-This is a game-changer for our community and represents exactly what we've been working towards.
+${content || 'This changes everything for our community. Ready to be part of something amazing?'}
 
-💡 Key highlights:
-• Innovation at its finest
-• Community-driven approach  
-• Real impact and results
-• Sustainable growth focus
+💡 What you need to know:
+• Innovation that matters
+• Real results you can see
+• Built for growth
 
-Join us on this incredible journey and be part of something bigger. What are your thoughts? Let us know in the comments! 👇`,
-          linkedin: `Professional Insight: ${topic}
+What do you think? Share your thoughts! 👇`,
+          linkedin: `${topic}: A Strategic Perspective
 
-In today's rapidly evolving business landscape, understanding and leveraging ${topic} has become increasingly critical for organizational success.
+${content || 'The business impact is becoming clear across industries. This transformation is reshaping how we approach core business strategies.'}
 
-KEY STRATEGIC CONSIDERATIONS:
-• Market positioning and competitive advantage
-• Implementation roadmap and timeline
-• Resource allocation and team development
-• ROI measurement and performance metrics
-• Risk mitigation and contingency planning
+Key considerations:
+• Strategic positioning & competitive advantage
+• Implementation & resource planning  
+• Measurable ROI & performance metrics
 
-INDUSTRY IMPACT:
-The integration of ${topic} into business operations is transforming how companies approach their core strategies, enabling them to achieve unprecedented levels of efficiency and innovation.
+What's your experience with ${topic}? Share your insights.`,
+          twitter: `🚀 ${topic} is changing the game! 
 
-What has been your experience with ${topic} in your organization? I'd love to hear your insights and lessons learned.`,
-          twitter: `🚀 ${topic} is transforming the industry! Here's what every business leader needs to know about this game-changing development. The future is happening now! 👇`,
-          facebook: `We're excited to share insights about ${topic} with our community! 
+${content || 'Here\'s what you need to know about this breakthrough. The future starts now!'} 👇`,
+          facebook: `Exciting updates about ${topic}! 
 
-This topic has been gaining significant attention, and for good reason. ${topic} represents a shift in how we approach business challenges and opportunities.
+${content || 'This is creating real change in how we solve problems and create opportunities.'}
 
-Here's what makes it special:
-✨ Innovative approaches to traditional problems
-🎯 Clear value proposition for businesses
-🚀 Scalable solutions for growth
-💪 Community-driven development
+What makes it powerful:
+✨ Fresh approaches to old challenges
+🎯 Clear benefits you can measure
+🚀 Grows with your needs
 
-We'd love to hear your thoughts and experiences. How has ${topic} impacted your work or business? Share your story in the comments!`,
-          tiktok: `POV: You just discovered ${topic} and it's about to change everything! 🤯 Here's the tea on why everyone's talking about this trend. Who else is ready to level up? ✨ #Trending #GameChanger`
+How has ${topic} impacted your work? Share your story!`,
+          tiktok: `POV: You discovered ${topic} and it's game-changing! 🤯 
+
+${content || 'Here\'s why everyone\'s talking about it. Ready to level up?'} ✨`
         },
         educational: {
-          instagram: `📚 Learning opportunity: ${topic}
+          instagram: `📚 Learning ${topic}
 
-Understanding ${topic} can make a significant difference in how we approach our daily challenges.
+${content || 'Understanding this can transform how you tackle daily challenges.'}
 
-🎯 Essential takeaways:
-• Knowledge is power when applied correctly
-• Continuous learning drives success
-• Practical application matters most
-• Share knowledge to multiply impact
+🎯 Key takeaways:
+• Apply knowledge for real power
+• Keep learning for success  
+• Practice makes perfect
+• Share to multiply impact
 
-Education never stops, and neither should our curiosity. What's one thing you learned recently that changed your perspective?`,
-          linkedin: `Educational Deep Dive: Understanding ${topic}
+What's one thing you learned recently that changed your perspective?`,
+          linkedin: `Learning ${topic}: A Professional Perspective
 
-As professionals, our commitment to continuous learning and development is what sets us apart in today's competitive landscape.
+${content || 'Continuous learning sets us apart in today\'s competitive landscape.'}
 
-LEARNING FRAMEWORK:
-• Theoretical foundation and core principles
-• Practical applications and real-world examples
-• Best practices from industry leaders
-• Common challenges and how to overcome them
-• Future trends and emerging opportunities
+LEARNING APPROACH:
+• Core principles & practical applications
+• Real-world examples & best practices
+• Common challenges & solutions
+• Future trends & opportunities
 
-PROFESSIONAL DEVELOPMENT:
-Investing time in understanding ${topic} not only enhances our current capabilities but also prepares us for future opportunities and challenges in our respective fields.
+Investing in ${topic} enhances current capabilities and prepares us for future challenges.
 
-How do you approach continuous learning in your professional journey?`,
-          twitter: `📚 Quick lesson on ${topic}: Knowledge is power when you know how to apply it. Here are 3 key insights that changed my perspective. Thread 🧵 1/3`,
-          facebook: `Educational Post: Deep Dive into ${topic}
+How do you approach continuous learning?`,
+          twitter: `📚 Quick lesson on ${topic}: 
 
-Hey everyone! I wanted to share some valuable insights about ${topic} that I've been learning about recently.
+${content || 'Knowledge is power when applied. Here are 3 insights that changed my perspective.'} Thread 🧵 1/3`,
+          facebook: `Learning about ${topic}
 
-Why does this matter?
-${topic} is becoming increasingly important in our personal and professional lives. Understanding its fundamentals can help us make better decisions and stay ahead of the curve.
+${content || 'I wanted to share valuable insights I\'ve discovered recently about this important topic.'}
 
-Key Learning Points:
-📖 Core concepts and principles
+Why it matters: ${topic} is increasingly important in our personal and professional lives.
+
+Key points:
+📖 Core concepts & principles
 🔧 Practical applications
 💡 Real-world examples
-🎯 How to implement effectively
+🎯 Effective implementation
 
-I believe that sharing knowledge strengthens our entire community. What resources have you found helpful for learning about ${topic}? Drop them in the comments!`,
-          tiktok: `Learning ${topic} in 60 seconds! 📚✨ Save this for later because these tips are pure gold. Who else is ready to become an expert? #LearnOnTikTok #EducationTok`
+Sharing knowledge strengthens our community. What resources have helped you learn about ${topic}?`,
+          tiktok: `Learning ${topic} in 60 seconds! 📚✨ 
+
+${content || 'Save this - these tips are gold. Ready to become an expert?'}`
         }
       },
       hashtags: {
@@ -665,89 +669,86 @@ I believe that sharing knowledge strengthens our entire community. What resource
     es: {
       templates: {
         promotional: {
-          instagram: `🚀 ¡Noticias emocionantes sobre ${topic}!
+          instagram: `✨ ${topic}
 
-Esto representa un cambio revolucionario para nuestra comunidad y exactamente lo que hemos estado construyendo.
+${content || 'Esto cambia todo para nuestra comunidad. ¿Listo para ser parte de algo increíble?'}
 
-💡 Puntos destacados:
-• Innovación en su máxima expresión
-• Enfoque centrado en la comunidad
-• Impacto real y resultados tangibles
-• Crecimiento sostenible y responsable
+💡 Lo que lo hace especial:
+• Innovación que importa
+• Resultados reales que puedes ver
+• Construido para crecer
 
-Únete a nosotros en este increíble viaje y sé parte de algo más grande. ¿Qué opinas? ¡Compártenos tu perspectiva! 👇`,
-          linkedin: `Perspectiva Profesional: ${topic}
+¿Qué piensas? ¡Comparte tus ideas! 👇`,
+          linkedin: `${topic}: Una Perspectiva Estratégica
 
-En el panorama empresarial actual, comprender y aprovechar ${topic} se ha vuelto fundamental para el éxito organizacional.
+${content || 'El impacto empresarial se está volviendo claro en todas las industrias. Esta transformación está redefiniendo nuestras estrategias empresariales centrales.'}
 
-CONSIDERACIONES ESTRATÉGICAS CLAVE:
-• Posicionamiento en el mercado y ventaja competitiva
-• Hoja de ruta de implementación y cronograma
-• Asignación de recursos y desarrollo de equipos
-• Medición de ROI y métricas de rendimiento
-• Mitigación de riesgos y planes de contingencia
+Consideraciones clave:
+• Posicionamiento estratégico y ventaja competitiva
+• Implementación y planificación de recursos
+• ROI medible y métricas de rendimiento
 
-IMPACTO EN LA INDUSTRIA:
-La integración de ${topic} en las operaciones empresariales está transformando cómo las empresas abordan sus estrategias centrales.
+¿Cuál ha sido tu experiencia con ${topic}? Comparte tus ideas.`,
+          twitter: `🚀 ${topic} está cambiando las reglas del juego! 
 
-¿Cuál ha sido tu experiencia con ${topic} en tu organización?`,
-          twitter: `🚀 ${topic} está transformando la industria! Aquí tienes lo que todo líder empresarial necesita saber sobre este desarrollo revolucionario. ¡El futuro es ahora! 👇`,
-          facebook: `¡Estamos emocionados de compartir información sobre ${topic} con nuestra comunidad!
+${content || 'Esto es lo que necesitas saber sobre este avance. ¡El futuro empieza ahora!'} 👇`,
+          facebook: `¡Actualizaciones emocionantes sobre ${topic}! 
 
-Este tema ha estado ganando atención significativa, y por buenas razones. ${topic} representa un cambio en cómo abordamos los desafíos y oportunidades empresariales.
+${content || 'Esto está creando un cambio real en cómo resolvemos problemas y creamos oportunidades.'}
 
-Esto es lo que lo hace especial:
-✨ Enfoques innovadores a problemas tradicionales
-🎯 Propuesta de valor clara para empresas
-🚀 Soluciones escalables para el crecimiento
-💪 Desarrollo impulsado por la comunidad
+Lo que lo hace poderoso:
+✨ Enfoques frescos a desafíos antiguos
+🎯 Beneficios claros que puedes medir
+🚀 Crece con tus necesidades
 
-Nos encantaría escuchar tus pensamientos y experiencias. ¿Cómo ha impactado ${topic} tu trabajo o negocio? ¡Comparte tu historia en los comentarios!`,
-          tiktok: `POV: Acabas de descubrir ${topic} y está a punto de cambiar todo! 🤯 Aquí está la verdad sobre por qué todos hablan de esta tendencia. ¿Quién más está listo para subir de nivel? ✨`
+¿Cómo ha impactado ${topic} tu trabajo? ¡Comparte tu historia!`,
+          tiktok: `POV: Descubriste ${topic} y está cambiando todo! 🤯 
+
+${content || 'Por esto todos hablan de esta tendencia. ¿Listo para subir de nivel?'} ✨`
         },
         educational: {
-          instagram: `📚 Oportunidad de aprendizaje: ${topic}
+          instagram: `📚 Aprende sobre ${topic}
 
-Entender ${topic} puede hacer una diferencia significativa en cómo abordamos nuestros desafíos diarios.
+${content || 'Dominar este tema puede transformar tu día a día.'}
 
 🎯 Puntos clave:
-• El conocimiento es poder cuando se aplica correctamente
-• El aprendizaje continuo impulsa el éxito
-• La aplicación práctica es lo más importante
-• Compartir conocimiento multiplica el impacto
+• Conocimiento + acción = resultados
+• Aprende, aplica, comparte
+• La práctica hace al maestro
 
-La educación nunca se detiene, y nuestra curiosidad tampoco debería. ¿Qué es algo que aprendiste recientemente que cambió tu perspectiva?`,
-          linkedin: `Análisis Educativo: Entendiendo ${topic}
+¿Qué descubriste hoy que cambió tu perspectiva?`,
+          linkedin: `Desarrollo Profesional: ${topic}
 
-Como profesionales, nuestro compromiso con el aprendizaje continuo y el desarrollo es lo que nos distingue en el panorama competitivo actual.
+${content || 'El aprendizaje continuo nos distingue en el mercado actual.'}
 
-MARCO DE APRENDIZAJE:
-• Base teórica y principios fundamentales
-• Aplicaciones prácticas y ejemplos del mundo real
-• Mejores prácticas de líderes de la industria
-• Desafíos comunes y cómo superarlos
-• Tendencias futuras y oportunidades emergentes
+PUNTOS CLAVE:
+• Fundamentos sólidos
+• Aplicación práctica
+• Mejores prácticas
+• Tendencias emergentes
 
-DESARROLLO PROFESIONAL:
-Invertir tiempo en entender ${topic} no solo mejora nuestras capacidades actuales, sino que también nos prepara para futuras oportunidades y desafíos en nuestros campos respectivos.
+Invertir en ${topic} mejora nuestras capacidades y nos prepara para futuras oportunidades.
 
-¿Cómo abordas el aprendizaje continuo en tu carrera profesional?`,
-          twitter: `📚 Lección rápida sobre ${topic}: El conocimiento es poder cuando sabes cómo aplicarlo. Aquí tienes 3 ideas clave que cambiaron mi perspectiva. Hilo 🧵 1/3`,
-          facebook: `Post Educativo: Análisis Profundo de ${topic}
+¿Cómo integras el aprendizaje continuo en tu desarrollo profesional?`,
+          twitter: `📚 ${topic}: 
 
-¡Hola a todos! Quería compartir algunas ideas valiosas sobre ${topic} que he estado aprendiendo recientemente.
+${content || '3 puntos clave que cambiarán tu perspectiva.'} Hilo 🧵 1/3`,
+          facebook: `Aprendiendo sobre ${topic} 📚
 
-¿Por qué es importante esto?
-${topic} se está volviendo cada vez más importante en nuestras vidas personales y profesionales. Entender sus fundamentos puede ayudarnos a tomar mejores decisiones y mantenernos a la vanguardia.
+${content || '¡Hola! Quería compartir lo que descubrí sobre este tema tan importante.'}
 
-Puntos Clave de Aprendizaje:
-📖 Conceptos y principios fundamentales
-🔧 Aplicaciones prácticas
-💡 Ejemplos del mundo real
-🎯 Cómo implementar efectivamente
+¿Por qué importa? ${topic} puede ayudarnos a tomar mejores decisiones y mantenernos actualizados.
 
-Creo que compartir conocimiento fortalece toda nuestra comunidad. ¿Qué recursos has encontrado útiles para aprender sobre ${topic}? ¡Compártelos en los comentarios!`,
-          tiktok: `¡Aprendiendo ${topic} en 60 segundos! 📚✨ Guarda esto para después porque estos consejos son oro puro. ¿Quién más está listo para convertirse en experto?`
+Puntos clave:
+📖 Fundamentos
+🔧 Aplicación práctica
+💡 Ejemplos reales
+🎯 Implementación
+
+¿Qué recursos te han ayudado a aprender sobre ${topic}?`,
+          tiktok: `${topic} en 60 segundos 📚✨ 
+
+${content || 'Guarda esto porque estos tips son oro 🏆 ¿Listo para ser experto?'}`
         }
       },
       hashtags: {
@@ -759,7 +760,8 @@ Creo que compartir conocimiento fortalece toda nuestra comunidad. ¿Qué recurso
   };
 
   const templates = languageTemplates[language as keyof typeof languageTemplates] || languageTemplates.en;
-  const platformTemplate = templates.templates[contentType as keyof typeof templates.templates]?.[platform as keyof any];
+  const contentTypeTemplates = templates.templates[contentType as keyof typeof templates.templates];
+  const platformTemplate = contentTypeTemplates ? (contentTypeTemplates as any)[platform] : null;
   
   if (!platformTemplate) {
     // Basic fallback if no template exists

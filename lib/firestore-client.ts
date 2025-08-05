@@ -8,7 +8,8 @@ import {
   limit, 
   getDocs, 
   updateDoc, 
-  serverTimestamp 
+  serverTimestamp,
+  increment
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { SavedPrompt } from '@/lib/types/prompt';
@@ -56,6 +57,13 @@ export const savePromptToFirestore = async (prompt: string, userId: string): Pro
 
   const promptRef = doc(db, 'users', userId, 'prompts', promptId);
   await setDoc(promptRef, promptData);
+
+  // Update user usage statistics
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    'usage.promptsGenerated': increment(1),
+    updatedAt: serverTimestamp()
+  });
 
   return {
     ...promptData,
@@ -154,6 +162,13 @@ export const saveImageToFirestore = async (imageData: {
 
   const imageRef = doc(db, 'users', imageData.userId, 'images', imageId);
   await setDoc(imageRef, imageDocData);
+
+  // Update user usage statistics
+  const userRef = doc(db, 'users', imageData.userId);
+  await updateDoc(userRef, {
+    'usage.imagesCreated': increment(1),
+    updatedAt: serverTimestamp()
+  });
 
   return {
     id: imageId,

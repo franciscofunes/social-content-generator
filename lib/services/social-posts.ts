@@ -9,14 +9,16 @@ import {
   getDocs, 
   updateDoc, 
   deleteDoc,
-  serverTimestamp 
+  serverTimestamp,
+  increment 
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export interface SocialPost {
   id: string;
   userId: string;
-  prompt: string;
+  prompt: string; // Topic/subject
+  content?: string; // Main content/message
   generatedContent: {
     [platform: string]: {
       text: string;
@@ -48,6 +50,7 @@ export interface SocialPostsFilters {
 // Save a social post to Firestore
 export const saveSocialPostToFirestore = async (postData: {
   prompt: string;
+  content?: string;
   userId: string;
   generatedContent: { [platform: string]: { text: string; hashtags: string[] } };
   settings: {
@@ -67,6 +70,7 @@ export const saveSocialPostToFirestore = async (postData: {
   
   const postDocData: any = {
     prompt: postData.prompt.trim(),
+    content: postData.content?.trim(),
     userId: postData.userId,
     generatedContent: postData.generatedContent,
     settings: postData.settings,
@@ -84,6 +88,13 @@ export const saveSocialPostToFirestore = async (postData: {
 
   const postRef = doc(db, 'users', postData.userId, 'socialPosts', postId);
   await setDoc(postRef, postDocData);
+
+  // Update user usage statistics
+  const userRef = doc(db, 'users', postData.userId);
+  await updateDoc(userRef, {
+    'usage.socialPostsCreated': increment(1),
+    updatedAt: serverTimestamp()
+  });
 
   return {
     id: postId,

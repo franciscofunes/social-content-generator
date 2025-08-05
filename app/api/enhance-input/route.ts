@@ -73,7 +73,7 @@ async function makeGeminiRequest(prompt: string, maxRetries: number = 3): Promis
   }
 }
 
-function generateSystemPrompt(platform: string, inputType: 'topic' | 'instructions'): string {
+function generateSystemPrompt(platform: string, inputType: 'topic' | 'content' | 'instructions', language: string = 'en'): string {
   const platformSpecs = {
     instagram: {
       characteristics: 'Visual storytelling, lifestyle focus, aesthetic hashtags, engaging and authentic',
@@ -107,59 +107,48 @@ function generateSystemPrompt(platform: string, inputType: 'topic' | 'instructio
     return 'You are an expert social media strategist. Enhance the user input to create compelling social media content.';
   }
 
+  const languageInstructions = {
+    en: 'Respond in English.',
+    es: 'Responde en español.',
+    fr: 'Répondre en français.',
+    de: 'Antworte auf Deutsch.',
+    it: 'Rispondi in italiano.',
+    pt: 'Responda em português.'
+  };
+
+  const languageInstruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
+
   if (inputType === 'topic') {
-    return `You are an expert social media strategist specializing in ${platform.toUpperCase()}. Your task is to transform a basic topic/subject into a compelling, detailed content concept optimized for ${platform}.
+    return `You are a concise social media expert. Improve the user's topic to make it more engaging for ${platform}. Keep your response brief and focused.
 
-PLATFORM CONTEXT FOR ${platform.toUpperCase()}:
-- Platform characteristics: ${spec.characteristics}
-- Target audience: ${spec.audience}
-- Key features: ${spec.features}
-
-ENHANCEMENT GUIDELINES:
-1. EXPAND THE CONCEPT: Take the basic topic and develop it into a rich, engaging narrative
-2. ADD PLATFORM-SPECIFIC ANGLES: Tailor the approach to ${platform}'s unique strengths and audience expectations
-3. INCLUDE ENGAGEMENT HOOKS: Add elements that encourage interaction, sharing, and discussion
-4. SPECIFY VALUE PROPOSITION: Clearly outline what value this content provides to the audience
-5. ADD EMOTIONAL RESONANCE: Include emotional triggers appropriate for the platform and audience
-6. SUGGEST CONTENT STRUCTURE: Provide guidance on how to structure the content for maximum impact
-
-CONTENT OPTIMIZATION FOR ${platform.toUpperCase()}:
-- Focus on ${spec.characteristics}
+REQUIREMENTS:
+- Make it ${spec.characteristics}
 - Appeal to ${spec.audience}
-- Leverage ${spec.features}
+- Keep it concise (max 2-3 sentences)
+- ${languageInstruction}
 
-EXAMPLE TRANSFORMATION:
-Basic topic: "New product features"
-Enhanced concept: "Behind-the-scenes look at how customer feedback shaped our latest product updates, featuring real user stories, development challenges overcome, team insights, and exclusive preview of upcoming features that will solve specific pain points mentioned by our community"
+Transform the topic to be more compelling for ${platform}. Return ONLY the improved topic, nothing else.`;
+  } else if (inputType === 'content') {
+    return `You are a concise social media expert. Improve the user's content/message to be more engaging for ${platform}. Keep your response focused and actionable.
 
-Transform the user's topic into a detailed, compelling content concept that will resonate with ${platform}'s audience and drive engagement. Return ONLY the enhanced topic concept, no explanations or additional formatting.`;
+REQUIREMENTS:
+- Make it ${spec.characteristics}
+- Appeal to ${spec.audience}
+- Keep it concise but comprehensive
+- Add engaging elements appropriate for ${platform}
+- ${languageInstruction}
+
+Enhance the content to be more compelling and platform-optimized for ${platform}. Return ONLY the improved content, nothing else.`;
   } else {
-    return `You are an expert social media strategist specializing in ${platform.toUpperCase()}. Your task is to enhance and expand additional instructions to create more effective, platform-optimized social media content.
+    return `You are a concise social media expert. Improve the user's additional instructions for better ${platform} content. Keep your response brief and actionable.
 
-PLATFORM CONTEXT FOR ${platform.toUpperCase()}:
-- Platform characteristics: ${spec.characteristics}
-- Target audience: ${spec.audience}
-- Key features: ${spec.features}
+REQUIREMENTS:
+- Optimize for ${spec.characteristics}
+- Target ${spec.audience}
+- Keep it concise (max 3-4 bullet points)
+- ${languageInstruction}
 
-INSTRUCTION ENHANCEMENT GUIDELINES:
-1. PLATFORM OPTIMIZATION: Add specific guidance for ${platform}'s unique algorithm and audience preferences
-2. ENGAGEMENT STRATEGIES: Include tactics that drive interaction, shares, and saves on ${platform}
-3. CONTENT STRUCTURE: Provide formatting and presentation guidance optimized for ${platform}
-4. TIMING & FREQUENCY: Add recommendations for posting patterns that work best on ${platform}
-5. HASHTAG STRATEGY: Include platform-specific hashtag recommendations and best practices
-6. VISUAL ELEMENTS: Suggest visual components that perform well on ${platform}
-7. CALL-TO-ACTION: Add effective CTA strategies tailored to ${platform}'s user behavior
-
-PLATFORM-SPECIFIC ENHANCEMENTS FOR ${platform.toUpperCase()}:
-- Leverage ${spec.characteristics}
-- Appeal to ${spec.audience}
-- Optimize for ${spec.features}
-
-EXAMPLE TRANSFORMATION:
-Basic instruction: "Make it professional"
-Enhanced instruction: "Maintain a professional yet approachable tone that establishes thought leadership. Use industry-specific terminology to demonstrate expertise while remaining accessible. Include data points or statistics to support claims. Structure with clear headings and bullet points for easy scanning. Add a professional call-to-action that encourages meaningful business discussions and networking connections."
-
-Transform the user's additional instructions into comprehensive, platform-specific guidance that will result in more effective social media content. Return ONLY the enhanced instructions, no explanations or additional formatting.`;
+Enhance the instructions with specific ${platform} best practices. Return ONLY the improved instructions, nothing else.`;
   }
 }
 
@@ -187,7 +176,7 @@ function generateFallbackEnhancement(input: string, platform: string, inputType:
 
 export async function POST(request: NextRequest) {
   try {
-    const { input, platform, inputType } = await request.json();
+    const { input, platform, inputType, language = 'en' } = await request.json();
 
     if (!input || typeof input !== 'string') {
       return NextResponse.json(
@@ -203,9 +192,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!inputType || (inputType !== 'topic' && inputType !== 'instructions')) {
+    if (!inputType || !['topic', 'content', 'instructions'].includes(inputType)) {
       return NextResponse.json(
-        { error: 'Input type must be either "topic" or "instructions"' },
+        { error: 'Input type must be "topic", "content", or "instructions"' },
         { status: 400 }
       );
     }
@@ -213,7 +202,7 @@ export async function POST(request: NextRequest) {
     console.log(`Enhancing ${inputType} for ${platform}:`, input);
 
     try {
-      const systemPrompt = generateSystemPrompt(platform, inputType);
+      const systemPrompt = generateSystemPrompt(platform, inputType, language);
       const data = await makeGeminiRequest(systemPrompt + '\n\nUser input: ' + input);
       const enhancedInput = data.candidates[0].content.parts[0].text.trim();
 
