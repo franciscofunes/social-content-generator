@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDashboardStats, DashboardStats, getRecentActivity, RecentActivityItem } from '@/lib/dashboard-stats';
 import { Button } from '@/components/ui/button';
@@ -11,14 +13,12 @@ import {
   TrendingUp, 
   Clock, 
   Sparkles,
-  ArrowRight,
-  Zap,
-  Target,
-  Users
+  ArrowRight
 } from 'lucide-react';
 
 export default function NewDashboard() {
   const { user, userProfile } = useAuth();
+  const router = useRouter();
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     promptsGenerated: 0,
     imagesCreated: 0,
@@ -102,11 +102,6 @@ export default function NewDashboard() {
     { label: 'Social Posts', value: dashboardStats.socialPostsCreated, icon: Share2 },
   ];
 
-  const quickActions = [
-    { title: 'Generate Image Prompt', description: 'Quick prompt creation', href: '/prompts', icon: Zap },
-    { title: 'Create Social Post', description: 'Multi-platform content', href: '/social', icon: Target },
-    { title: 'Browse Gallery', description: 'View your creations', href: '/gallery', icon: Users }
-  ];
 
   // Helper function to get the right icon component
   const getActivityIcon = (iconName: string) => {
@@ -152,7 +147,11 @@ export default function NewDashboard() {
               }
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8">
+              <Button 
+                size="lg" 
+                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8"
+                onClick={() => router.push('/prompts')}
+              >
                 Start Creating
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -215,7 +214,7 @@ export default function NewDashboard() {
                 <div
                   key={index}
                   className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 cursor-pointer"
-                  onClick={() => window.location.href = feature.href}
+                  onClick={() => router.push(feature.href)}
                 >
                   <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${feature.lightColor} mb-6`}>
                     <Icon className={`h-6 w-6 ${feature.textColor}`} />
@@ -236,39 +235,17 @@ export default function NewDashboard() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              return (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="h-auto p-6 flex flex-col items-start text-left hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all group"
-                  onClick={() => window.location.href = action.href}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    <span className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                      {action.title}
-                    </span>
-                  </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {action.description}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Recent Activity */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Recent Activity</h2>
-            <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-blue-600 dark:text-blue-400"
+              onClick={() => router.push('/activity')}
+            >
               View All
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
@@ -323,7 +300,7 @@ export default function NewDashboard() {
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 Start creating content to see your recent activity here.
               </p>
-              <Button onClick={() => window.location.href = '/prompts'}>
+              <Button onClick={() => router.push('/prompts')}>
                 Create Your First Prompt
               </Button>
             </div>
