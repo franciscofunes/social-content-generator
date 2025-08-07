@@ -659,34 +659,34 @@ export default function ImageCreator() {
           </div>
 
           {/* Right Column - Generated Image */}
-          <div className="space-y-4 lg:space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Generated Image</h3>
+          <div className="space-y-4 lg:space-y-6 min-w-0">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 min-w-0">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 truncate">Generated Image</h3>
               
               <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden relative group">
                 {generatedImage ? (
                   imageLoadError ? (
-                    <div className="text-center p-6">
-                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Camera className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                          <span className="font-medium text-yellow-800 dark:text-yellow-200">Image Generated but Preview Failed</span>
+                    <div className="text-center p-4 sm:p-6 w-full min-w-0">
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4 mb-4 w-full">
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
+                          <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                          <span className="font-medium text-yellow-800 dark:text-yellow-200 text-sm sm:text-base truncate">Image Generated but Preview Failed</span>
                         </div>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
+                        <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 mb-3 break-words">
                           The image was successfully created by Bria AI but cannot be displayed due to CORS restrictions.
                         </p>
-                        <div className="flex flex-col gap-2">
-                          <Button onClick={copyImageUrl} size="sm" variant="outline">
-                            <Copy className="h-4 w-4 mr-2" />
-                            Copy Image URL
+                        <div className="flex flex-col gap-2 w-full">
+                          <Button onClick={copyImageUrl} size="sm" variant="outline" className="w-full">
+                            <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">Copy Image URL</span>
                           </Button>
-                          <Button onClick={downloadImage} size="sm">
-                            <Download className="h-4 w-4 mr-2" />
-                            Download Image
+                          <Button onClick={downloadImage} size="sm" className="w-full">
+                            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+                            <span className="truncate">Download Image</span>
                           </Button>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 break-all">
                         Original URL: {generatedImage.substring(0, 50)}...
                       </p>
                     </div>
@@ -729,28 +729,40 @@ export default function ImageCreator() {
               </div>
 
               {generatedImage && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
-                  <div className="flex items-center gap-2 order-2 sm:order-1">
+                <div className="flex flex-col gap-2 mt-4 w-full">
+                  {/* Primary Download Button */}
+                  <Button 
+                    onClick={downloadImage} 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    size="default"
+                  >
+                    <Download className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">Download Image</span>
+                  </Button>
+                  
+                  {/* Secondary Actions */}
+                  <div className="flex items-center gap-2 w-full">
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm" 
                       onClick={saveImage}
                       disabled={!user}
                       title={!user ? 'Please sign in to save images' : 'Save this image'}
-                      className="flex-1 sm:flex-none"
+                      className="flex-1 min-w-0"
                     >
-                      <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                      <span className="text-xs sm:text-sm">Save</span>
+                      <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm truncate">Save</span>
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={copyImageUrl} className="flex-1 sm:flex-none">
-                      <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                      <span className="text-xs sm:text-sm">Copy URL</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={copyImageUrl} 
+                      className="flex-1 min-w-0"
+                    >
+                      <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm truncate">Copy URL</span>
                     </Button>
                   </div>
-                  <Button onClick={downloadImage} className="w-full sm:w-auto order-1 sm:order-2">
-                    <Download className="h-4 w-4 mr-2" />
-                    <span className="text-sm sm:text-base">Download</span>
-                  </Button>
                 </div>
               )}
             </div>

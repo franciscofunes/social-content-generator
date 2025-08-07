@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDashboardStats, DashboardStats } from '@/lib/dashboard-stats';
+import { getDashboardStats, DashboardStats, getRecentActivity, RecentActivityItem } from '@/lib/dashboard-stats';
 import { Button } from '@/components/ui/button';
 import { 
   MessageSquare, 
@@ -25,6 +25,8 @@ export default function NewDashboard() {
     socialPostsCreated: 0
   });
   const [statsLoading, setStatsLoading] = useState(false);
+  const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   // Load dashboard statistics
   useEffect(() => {
@@ -43,6 +45,25 @@ export default function NewDashboard() {
     };
 
     loadStats();
+  }, [user]);
+
+  // Load recent activity
+  useEffect(() => {
+    const loadActivity = async () => {
+      if (!user) return;
+      
+      setActivityLoading(true);
+      try {
+        const activity = await getRecentActivity(user.uid, 8);
+        setRecentActivity(activity);
+      } catch (error) {
+        console.error('Error loading recent activity:', error);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+
+    loadActivity();
   }, [user]);
 
   const features = [
@@ -86,6 +107,26 @@ export default function NewDashboard() {
     { title: 'Create Social Post', description: 'Multi-platform content', href: '/social', icon: Target },
     { title: 'Browse Gallery', description: 'View your creations', href: '/gallery', icon: Users }
   ];
+
+  // Helper function to get the right icon component
+  const getActivityIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'MessageSquare': return MessageSquare;
+      case 'Image': return ImageIcon;
+      case 'Share2': return Share2;
+      default: return Clock;
+    }
+  };
+
+  // Helper function to get activity type colors
+  const getActivityTypeColor = (type: string) => {
+    switch (type) {
+      case 'prompt': return 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20';
+      case 'image': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
+      case 'social': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20';
+      default: return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -232,16 +273,61 @@ export default function NewDashboard() {
               <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
-          <div className="text-center py-12">
-            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Recent Activity</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Start creating content to see your recent activity here.
-            </p>
-            <Button onClick={() => window.location.href = '/prompts'}>
-              Create Your First Prompt
-            </Button>
-          </div>
+          
+          {activityLoading ? (
+            <div className="space-y-4">
+              {[...Array(4)].map((_, index) => (
+                <div key={index} className="flex items-start gap-4 p-4 animate-pulse">
+                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg flex-shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                  </div>
+                  <div className="w-16 h-3 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : recentActivity.length > 0 ? (
+            <div className="space-y-3">
+              {recentActivity.map((item) => {
+                const Icon = getActivityIcon(item.icon);
+                const colorClasses = getActivityTypeColor(item.type);
+                
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-start gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClasses}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 break-words">
+                        {item.description}
+                      </p>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Recent Activity</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Start creating content to see your recent activity here.
+              </p>
+              <Button onClick={() => window.location.href = '/prompts'}>
+                Create Your First Prompt
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
