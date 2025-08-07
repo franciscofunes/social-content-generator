@@ -52,8 +52,10 @@ export function ImprovedImageModal({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [lastTouchDistance, setLastTouchDistance] = useState(0);
   const [initialTouchCenter, setInitialTouchCenter] = useState({ x: 0, y: 0 });
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [showSubtleArrows, setShowSubtleArrows] = useState(false);
+  const [showMobileNavigation, setShowMobileNavigation] = useState(false);
+  const [showInitialHint, setShowInitialHint] = useState(false);
+  const mobileNavTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hintTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const modalRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
@@ -73,14 +75,24 @@ export function ImprovedImageModal({
       setImagePosition({ x: 0, y: 0 });
       setIsDragging(false);
       document.body.style.overflow = 'hidden';
+      
+      // Show navigation hint on mobile devices when there are multiple images
+      if (images.length > 1 && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+        setShowInitialHint(true);
+        hintTimeoutRef.current = setTimeout(() => {
+          setShowInitialHint(false);
+        }, 2500);
+      }
     } else {
       document.body.style.overflow = 'unset';
+      setShowMobileNavigation(false);
+      setShowInitialHint(false);
     }
 
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, currentIndex]);
+  }, [isOpen, currentIndex, images.length]);
 
   // Keyboard navigation and zoom
   useEffect(() => {
@@ -142,25 +154,6 @@ export function ImprovedImageModal({
     return () => document.removeEventListener('wheel', handleWheel);
   }, [isOpen, canZoomIn, canZoomOut, zoomIndex]);
 
-  // Mouse movement tracking for subtle arrow reveals
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isOpen) return;
-      
-      setMousePosition({ x: e.clientX, y: e.clientY });
-      
-      // Show subtle arrows when mouse is near edges
-      const windowWidth = window.innerWidth;
-      const edgeThreshold = 150;
-      const nearLeftEdge = e.clientX < edgeThreshold;
-      const nearRightEdge = e.clientX > windowWidth - edgeThreshold;
-      
-      setShowSubtleArrows(nearLeftEdge || nearRightEdge);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => document.removeEventListener('mousemove', handleMouseMove);
-  }, [isOpen]);
 
   const goToPrevious = useCallback(() => {
     if (canGoPrevious) {
@@ -175,6 +168,31 @@ export function ImprovedImageModal({
       onIndexChange?.(newIndex);
     }
   }, [canGoNext, currentIndex, onIndexChange]);
+
+  // Handle mobile navigation visibility
+  const showMobileNavigationWithTimeout = useCallback(() => {
+    setShowMobileNavigation(true);
+    
+    if (mobileNavTimeoutRef.current) {
+      clearTimeout(mobileNavTimeoutRef.current);
+    }
+    
+    mobileNavTimeoutRef.current = setTimeout(() => {
+      setShowMobileNavigation(false);
+    }, 3000); // Hide after 3 seconds
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (mobileNavTimeoutRef.current) {
+        clearTimeout(mobileNavTimeoutRef.current);
+      }
+      if (hintTimeoutRef.current) {
+        clearTimeout(hintTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleZoomIn = (centerX?: number, centerY?: number) => {
     if (canZoomIn) {
@@ -391,71 +409,43 @@ export function ImprovedImageModal({
       ref={modalRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
+      onTouchStart={showMobileNavigationWithTimeout}
     >
-      {/* Large Navigation Arrows */}
-      {canGoPrevious && (
-        <Button
-          variant="ghost"
-          size="lg"
-          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 text-white border-none h-16 w-16 rounded-full shadow-2xl"
-          onClick={goToPrevious}
-        >
-          <ArrowLeft className="h-8 w-8" />
-        </Button>
-      )}
-
-      {canGoNext && (
-        <Button
-          variant="ghost"
-          size="lg"
-          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 bg-black/60 hover:bg-black/80 text-white border-none h-16 w-16 rounded-full shadow-2xl"
-          onClick={goToNext}
-        >
-          <ArrowRight className="h-8 w-8" />
-        </Button>
-      )}
-
-      {/* Gallery-Style Subtle Navigation Areas */}
+      {/* Minimalist Navigation Areas - Exclude top area to avoid blocking controls */}
       {canGoPrevious && (
         <div 
-          className="absolute left-0 top-0 bottom-0 w-40 z-15 group cursor-pointer" 
+          className="absolute left-0 top-20 bottom-20 w-32 z-10 group cursor-pointer flex items-center" 
           onClick={goToPrevious}
+          onTouchStart={showMobileNavigationWithTimeout}
         >
-          <div className={`absolute left-3 top-1/2 -translate-y-1/2 transition-all duration-300 ${
-            showSubtleArrows && mousePosition.x < 150 ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'
+          <div className={`ml-4 transition-all duration-300 transform ${
+            showMobileNavigation || showInitialHint ? 'opacity-90 scale-110' : 'opacity-0 group-hover:opacity-100 group-hover:scale-110'
           }`}>
-            <div className="bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full p-2.5 shadow-xl transition-all duration-200 hover:scale-110 border border-white/20 hover:border-white/30">
-              <ArrowLeft className="h-4 w-4 text-white drop-shadow-lg" />
+            <div className="bg-white/25 hover:bg-white/40 backdrop-blur-sm rounded-full p-3 shadow-xl border border-white/40 hover:border-white/60">
+              <ArrowLeft className="h-5 w-5 text-white drop-shadow-lg" />
             </div>
           </div>
-          {/* Enhanced gradient hint */}
-          <div className={`absolute left-0 top-1/4 bottom-1/4 w-2 bg-gradient-to-r from-white/8 via-white/4 to-transparent rounded-r transition-opacity duration-300 ${
-            showSubtleArrows && mousePosition.x < 150 ? 'opacity-60' : 'opacity-0 group-hover:opacity-40'
-          }`}></div>
         </div>
       )}
 
       {canGoNext && (
         <div 
-          className="absolute right-0 top-0 bottom-0 w-40 z-15 group cursor-pointer" 
+          className="absolute right-0 top-20 bottom-20 w-32 z-10 group cursor-pointer flex items-center justify-end" 
           onClick={goToNext}
+          onTouchStart={showMobileNavigationWithTimeout}
         >
-          <div className={`absolute right-3 top-1/2 -translate-y-1/2 transition-all duration-300 ${
-            showSubtleArrows && (typeof window !== 'undefined' && mousePosition.x > window.innerWidth - 150) ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'
+          <div className={`mr-4 transition-all duration-300 transform ${
+            showMobileNavigation || showInitialHint ? 'opacity-90 scale-110' : 'opacity-0 group-hover:opacity-100 group-hover:scale-110'
           }`}>
-            <div className="bg-white/10 hover:bg-white/25 backdrop-blur-md rounded-full p-2.5 shadow-xl transition-all duration-200 hover:scale-110 border border-white/20 hover:border-white/30">
-              <ArrowRight className="h-4 w-4 text-white drop-shadow-lg" />
+            <div className="bg-white/25 hover:bg-white/40 backdrop-blur-sm rounded-full p-3 shadow-xl border border-white/40 hover:border-white/60">
+              <ArrowRight className="h-5 w-5 text-white drop-shadow-lg" />
             </div>
           </div>
-          {/* Enhanced gradient hint */}
-          <div className={`absolute right-0 top-1/4 bottom-1/4 w-2 bg-gradient-to-l from-white/8 via-white/4 to-transparent rounded-l transition-opacity duration-300 ${
-            showSubtleArrows && (typeof window !== 'undefined' && mousePosition.x > window.innerWidth - 150) ? 'opacity-60' : 'opacity-0 group-hover:opacity-40'
-          }`}></div>
         </div>
       )}
 
       {/* Top Controls */}
-      <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-10">
+      <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-30">
         <div className="flex items-center gap-3 bg-black/60 rounded-full px-4 py-2 backdrop-blur-sm">
           <span className="text-white text-sm font-medium">
             {currentIndex + 1} / {images.length}
@@ -595,7 +585,7 @@ export function ImprovedImageModal({
 
       {/* Keyboard Shortcuts Help */}
       <div className="absolute bottom-6 right-6 text-white/60 text-xs bg-black/40 rounded-lg px-3 py-2 backdrop-blur-sm">
-        <div>ESC • ←/→ • Wheel/+/- • 0 Reset • F Fullscreen</div>
+        <div>ESC • ←/→ • Wheel/+/- • 0 Reset • F Fullscreen • Hover sides to navigate</div>
       </div>
     </div>
   );

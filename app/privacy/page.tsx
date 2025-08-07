@@ -318,7 +318,7 @@ export default function Privacy() {
                         Twitter
                       </a>
                       <a
-                        href="https://www.instagram.com/equal.dev/"
+                        href="https://instagram.com/equal.dev/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 px-2 py-1 bg-pink-500 hover:bg-pink-600 text-white rounded text-sm transition-colors"

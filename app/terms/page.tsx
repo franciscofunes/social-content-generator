@@ -245,7 +245,7 @@ export default function Terms() {
                         Twitter
                       </a>
                       <a
-                        href="https://www.instagram.com/equal.dev/"
+                        href="https://instagram.com/equal.dev/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 px-3 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-md text-sm transition-colors"
