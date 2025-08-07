@@ -109,7 +109,7 @@ export const getRecentActivity = async (userId: string, limitCount: number = 10)
           type: 'prompt',
           title: 'Prompt Generated',
           description: prompt.prompt.length > 60 ? prompt.prompt.substring(0, 60) + '...' : prompt.prompt,
-          createdAt: prompt.createdAt,
+          createdAt: prompt.createdAt || new Date().toISOString(),
           icon: 'MessageSquare'
         });
       });
@@ -126,7 +126,7 @@ export const getRecentActivity = async (userId: string, limitCount: number = 10)
           type: 'image',
           title: 'Image Created',
           description: image.prompt.length > 60 ? image.prompt.substring(0, 60) + '...' : image.prompt,
-          createdAt: image.createdAt,
+          createdAt: image.createdAt || new Date().toISOString(),
           icon: 'Image'
         });
       });

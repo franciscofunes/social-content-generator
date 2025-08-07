@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import UserProfile from '@/components/auth/UserProfile';
 import LoginModal from '@/components/auth/LoginModal';
+import Footer from '@/components/layout/Footer';
+import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import { 
   Menu, 
   X, 
@@ -16,7 +18,13 @@ import {
   Settings,
   Moon,
   Sun,
-  Sparkles
+  Sparkles,
+  Shield,
+  FileText,
+  HelpCircle,
+  Mail,
+  Lightbulb,
+  Bug
 } from 'lucide-react';
 
 interface MainLayoutProps {
@@ -53,6 +61,18 @@ export default function MainLayout({ children, currentPage = 'dashboard' }: Main
     { name: 'Image Creator', href: '/images', icon: Image, id: 'images' },
     { name: 'Social Posts', href: '/social', icon: Share2, id: 'social' },
     { name: 'Gallery', href: '/gallery', icon: ImageIcon, id: 'gallery' },
+  ];
+
+  const supportLinks = [
+    { name: 'Help Center', href: '/support/help', icon: HelpCircle },
+    { name: 'Contact Us', href: '/support/contact', icon: Mail },
+    { name: 'Feature Requests', href: '/support/features', icon: Lightbulb },
+    { name: 'Bug Reports', href: '/support/bugs', icon: Bug },
+  ];
+
+  const legalLinks = [
+    { name: 'Terms & Conditions', href: '/terms', icon: FileText },
+    { name: 'Privacy Policy', href: '/privacy', icon: Shield },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -137,6 +157,48 @@ export default function MainLayout({ children, currentPage = 'dashboard' }: Main
                   </a>
                 );
               })}
+              
+              {/* Support Section */}
+              <div className="pt-6">
+                <h3 className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Support
+                </h3>
+                {supportLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Icon className="h-5 w-5" />
+                      {item.name}
+                    </a>
+                  );
+                })}
+              </div>
+
+              {/* Legal Section */}
+              <div className="pt-6">
+                <h3 className="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                  Legal
+                </h3>
+                {legalLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      onClick={closeSidebar}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Icon className="h-5 w-5" />
+                      {item.name}
+                    </a>
+                  );
+                })}
+              </div>
             </nav>
           </div>
         </div>
@@ -221,11 +283,19 @@ export default function MainLayout({ children, currentPage = 'dashboard' }: Main
 
         {/* Main content */}
         <div className="lg:pl-64 flex flex-col flex-1 min-h-screen">
-          <main className="flex-1">
+          <main className="flex-1 pb-24 lg:pb-0">
             {children}
           </main>
+          
+          {/* Footer - hidden on mobile, shown on desktop */}
+          <div className="hidden lg:block">
+            <Footer />
+          </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
 
       {/* Login Modal */}
       {showLoginModal && (
