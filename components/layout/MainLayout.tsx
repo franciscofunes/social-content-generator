@@ -24,12 +24,13 @@ import {
   HelpCircle,
   Mail,
   Lightbulb,
-  Bug
+  Bug,
+  Clock
 } from 'lucide-react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  currentPage?: 'dashboard' | 'prompts' | 'images' | 'social' | 'gallery' | 'settings';
+  currentPage?: 'dashboard' | 'prompts' | 'images' | 'social' | 'gallery' | 'activity' | 'settings';
 }
 
 export default function MainLayout({ children, currentPage = 'dashboard' }: MainLayoutProps) {
@@ -61,6 +62,7 @@ export default function MainLayout({ children, currentPage = 'dashboard' }: Main
     { name: 'Image Creator', href: '/images', icon: Image, id: 'images' },
     { name: 'Social Posts', href: '/social', icon: Share2, id: 'social' },
     { name: 'Gallery', href: '/gallery', icon: ImageIcon, id: 'gallery' },
+    { name: 'Activity', href: '/activity', icon: Clock, id: 'activity' },
   ];
 
   const supportLinks = [

@@ -8,7 +8,8 @@ import {
   Image, 
   Share2, 
   ImageIcon,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 
 interface NavItem {
@@ -23,7 +24,7 @@ const navigation: NavItem[] = [
   { name: 'Prompts', href: '/prompts', icon: MessageSquare, id: 'prompts' },
   { name: 'Create', href: '/images', icon: Plus, id: 'images' },
   { name: 'Social', href: '/social', icon: Share2, id: 'social' },
-  { name: 'Gallery', href: '/gallery', icon: ImageIcon, id: 'gallery' },
+  { name: 'Activity', href: '/activity', icon: Clock, id: 'activity' },
 ];
 
 export default function MobileBottomNav() {
@@ -36,6 +37,7 @@ export default function MobileBottomNav() {
     if (pathname === '/images') return 'images';
     if (pathname === '/social') return 'social';
     if (pathname === '/gallery') return 'gallery';
+    if (pathname === '/activity') return 'activity';
     return 'dashboard';
   };
 
