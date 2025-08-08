@@ -83,6 +83,8 @@ export default function ImageCreator() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [loadingMoreImages, setLoadingMoreImages] = useState(false);
+  const [hasMoreImages, setHasMoreImages] = useState(true);
   const [currentImageSeed, setCurrentImageSeed] = useState<number | undefined>(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState<string>('');
@@ -107,20 +109,48 @@ export default function ImageCreator() {
     }
   }, [user]);
 
-  const loadSavedImages = async () => {
+  const loadSavedImages = async (reset = true) => {
     if (!user) return;
 
-    setLoadingImages(true);
+    if (reset) {
+      setLoadingImages(true);
+      setSavedImages([]);
+    } else {
+      setLoadingMoreImages(true);
+    }
+    
     try {
       console.log('Loading images for user:', user.uid);
       const images = await loadImagesFromFirestore(user.uid);
       console.log('Loaded images:', images.length);
-      setSavedImages(images);
+      
+      if (reset) {
+        setSavedImages(images);
+        setHasMoreImages(images.length >= 10); // Assume more if we have 10 or more
+      } else {
+        // Simulate pagination by showing more images
+        const newImages = images.slice(savedImages.length, savedImages.length + 5);
+        setSavedImages(prev => [...prev, ...newImages]);
+        setHasMoreImages(savedImages.length + newImages.length < images.length);
+      }
     } catch (error) {
       console.error('Error loading images:', error);
       toast.error('Failed to load saved images');
     } finally {
       setLoadingImages(false);
+      setLoadingMoreImages(false);
+    }
+  };
+
+  const loadMoreImages = async () => {
+    if (loadingMoreImages || !hasMoreImages) return;
+    await loadSavedImages(false);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight * 1.5 && hasMoreImages && !loadingMoreImages) {
+      loadMoreImages();
     }
   };
 
@@ -891,7 +921,18 @@ export default function ImageCreator() {
           {/* Third Column - Saved Images (Third on mobile) */}
           <div className="space-y-4 lg:space-y-6 lg:col-span-1 xl:col-span-1 lg:order-3 xl:order-3">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Saved Images</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Saved Images</h3>
+                <a 
+                  href="/gallery" 
+                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg transition-all duration-200 hover:shadow-sm"
+                  title="View all images in Gallery"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  <span>Gallery</span>
+                  <ArrowRight className="h-3 w-3" />
+                </a>
+              </div>
               
               {loadingImages ? (
                 <div className="text-center py-8">
@@ -907,7 +948,53 @@ export default function ImageCreator() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 sm:space-y-4 max-h-80 sm:max-h-96 overflow-y-auto">
+                <>
+                  <style jsx global>{`
+                    .saved-images-scroll {
+                      scrollbar-width: thin;
+                      scrollbar-color: #e2e8f0 transparent;
+                    }
+                    .saved-images-scroll::-webkit-scrollbar {
+                      width: 8px;
+                    }
+                    .saved-images-scroll::-webkit-scrollbar-track {
+                      background: #f8fafc;
+                      border-radius: 8px;
+                      margin: 4px 0;
+                    }
+                    .saved-images-scroll::-webkit-scrollbar-thumb {
+                      background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+                      border-radius: 8px;
+                      border: 2px solid #f8fafc;
+                      background-clip: padding-box;
+                    }
+                    .saved-images-scroll::-webkit-scrollbar-thumb:hover {
+                      background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+                    }
+                    .saved-images-scroll::-webkit-scrollbar-thumb:active {
+                      background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+                    }
+                    .dark .saved-images-scroll {
+                      scrollbar-color: #475569 transparent;
+                    }
+                    .dark .saved-images-scroll::-webkit-scrollbar-track {
+                      background: #1e293b;
+                    }
+                    .dark .saved-images-scroll::-webkit-scrollbar-thumb {
+                      background: linear-gradient(180deg, #475569 0%, #334155 100%);
+                      border-color: #1e293b;
+                    }
+                    .dark .saved-images-scroll::-webkit-scrollbar-thumb:hover {
+                      background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+                    }
+                    .dark .saved-images-scroll::-webkit-scrollbar-thumb:active {
+                      background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+                    }
+                  `}</style>
+                  <div 
+                    className="space-y-4 max-h-96 overflow-y-auto pr-1 saved-images-scroll"
+                    onScroll={handleScroll}
+                  >
                   {savedImages.map((savedImage) => (
                     <div
                       key={savedImage.id}
@@ -999,7 +1086,32 @@ export default function ImageCreator() {
                       </div>
                     </div>
                   ))}
-                </div>
+                    
+                    {/* Infinite Scroll Loading */}
+                    {loadingMoreImages && (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="flex items-center gap-3">
+                          <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Loading more images...</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* End of list indicator */}
+                    {!hasMoreImages && savedImages.length > 5 && (
+                      <div className="text-center py-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">You've reached the end! 🎉</p>
+                        <a 
+                          href="/gallery" 
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium mt-2"
+                        >
+                          View all in Gallery
+                          <ArrowRight className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
             
