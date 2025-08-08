@@ -654,11 +654,6 @@ export default function ImageCreator() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                     <span>{prompt.length} characters</span>
-                    {prompt.length < 50 && (
-                      <div className="mt-1 text-orange-600 dark:text-orange-400">
-                        💡 Try the AI Enhance button for better results!
-                      </div>
-                    )}
                   </div>
                   <Button
                     onClick={generateImage}

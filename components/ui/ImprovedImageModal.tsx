@@ -12,7 +12,8 @@ import {
   ArrowRight,
   Copy,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { UniversalImage, isSVGUrl } from './UniversalImage';
@@ -31,6 +32,7 @@ interface ImprovedImageModalProps {
   images: ImageData[];
   currentIndex: number;
   onIndexChange?: (index: number) => void;
+  onDelete?: (imageId: string) => void;
 }
 
 const ZOOM_LEVELS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 6];
@@ -41,7 +43,8 @@ export function ImprovedImageModal({
   onClose, 
   images, 
   currentIndex, 
-  onIndexChange 
+  onIndexChange,
+  onDelete 
 }: ImprovedImageModalProps) {
   const [zoomIndex, setZoomIndex] = useState(DEFAULT_ZOOM_INDEX);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -307,6 +310,15 @@ export function ImprovedImageModal({
     }
   };
 
+  const handleDelete = () => {
+    if (!currentImage || !onDelete) return;
+    
+    if (window.confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
+      onDelete(currentImage.id);
+      toast.success('Image deleted successfully!');
+    }
+  };
+
   // Mouse drag handling
   const handleMouseDown = (e: React.MouseEvent) => {
     if (currentZoom > 1) {
@@ -444,8 +456,20 @@ export function ImprovedImageModal({
         </div>
       )}
 
-      {/* Top Controls */}
-      <div className="absolute top-6 left-6 right-6 flex justify-between items-start z-30">
+      {/* Mobile-First Close Button - Always Visible */}
+      <div className="absolute top-4 right-4 z-50">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-white hover:bg-white/30 bg-black/70 hover:bg-black/80 rounded-full h-12 w-12 p-0 backdrop-blur-md shadow-2xl border border-white/20 hover:border-white/40 transition-all duration-200"
+          onClick={onClose}
+        >
+          <X className="h-6 w-6 drop-shadow-lg" />
+        </Button>
+      </div>
+
+      {/* Top Controls - Desktop/Tablet */}
+      <div className="absolute top-6 left-6 right-20 flex justify-between items-start z-30 hidden sm:flex">
         <div className="flex items-center gap-3 bg-black/60 rounded-full px-4 py-2 backdrop-blur-sm">
           <span className="text-white text-sm font-medium">
             {currentIndex + 1} / {images.length}
@@ -525,16 +549,50 @@ export function ImprovedImageModal({
               <Copy className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Close Button */}
+      {/* Mobile Controls - Simplified */}
+      <div className={`absolute top-6 left-4 right-20 flex justify-between items-center z-30 sm:hidden transition-opacity duration-300 ${
+        showMobileNavigation || showInitialHint ? 'opacity-100' : 'opacity-0'
+      }`}>
+        <div className="bg-black/70 rounded-full px-3 py-2 backdrop-blur-md">
+          <span className="text-white text-sm font-medium">
+            {currentIndex + 1} / {images.length}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
-            className="text-white hover:bg-white/20 bg-black/60 rounded-full h-12 w-12 p-0 backdrop-blur-sm"
-            onClick={onClose}
+            className="text-white hover:bg-white/30 bg-black/70 rounded-full h-10 w-10 p-0 backdrop-blur-md"
+            onClick={handleCopyUrl}
+            title="Copy image URL"
           >
-            <X className="h-6 w-6" />
+            <Copy className="h-4 w-4" />
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/30 bg-black/70 rounded-full h-10 w-10 p-0 backdrop-blur-md"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            title="Download image"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-red-500/30 bg-black/70 rounded-full h-10 w-10 p-0 backdrop-blur-md"
+              onClick={handleDelete}
+              title="Delete image"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -583,9 +641,16 @@ export function ImprovedImageModal({
         </div>
       )}
 
-      {/* Keyboard Shortcuts Help */}
-      <div className="absolute bottom-6 right-6 text-white/60 text-xs bg-black/40 rounded-lg px-3 py-2 backdrop-blur-sm">
+      {/* Keyboard Shortcuts Help - Hidden on Mobile */}
+      <div className="absolute bottom-6 right-6 text-white/60 text-xs bg-black/40 rounded-lg px-3 py-2 backdrop-blur-sm hidden sm:block">
         <div>ESC • ←/→ • Wheel/+/- • 0 Reset • F Fullscreen • Hover sides to navigate</div>
+      </div>
+      
+      {/* Mobile Instructions */}
+      <div className={`absolute bottom-4 left-4 right-4 text-white/70 text-xs bg-black/50 rounded-lg px-3 py-2 backdrop-blur-sm text-center sm:hidden transition-opacity duration-300 ${
+        showInitialHint ? 'opacity-100' : 'opacity-0'
+      }`}>
+        <div>Tap image to show/hide controls • Pinch to zoom • Swipe left/right to navigate</div>
       </div>
     </div>
   );
