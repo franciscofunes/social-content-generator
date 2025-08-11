@@ -480,11 +480,11 @@ export default function ImageCreator() {
           </div>
         </div>
 
-        {/* Mobile-first layout - Generated Image first, then prompt, then other controls */}
+        {/* Natural layout - Image and Prompt always together */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           
-          {/* Generated Image - First on Mobile */}
-          <div className="space-y-4 lg:space-y-6 min-w-0 order-1 lg:order-2 xl:order-2">
+          {/* Main Column - Generated Image and Prompt (always together) */}
+          <div className="space-y-4 lg:space-y-6 min-w-0 order-1 lg:order-1 xl:order-1">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 min-w-0">
               <Button
                 variant="ghost"
@@ -603,38 +603,7 @@ export default function ImageCreator() {
               )}
             </div>
 
-            {/* Bria AI Tips */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">🚀 Bria AI Pro Tips</h4>
-              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
-                <li>• <strong>Base Model:</strong> Best overall quality and creativity</li>
-                <li>• <strong>Fast Model:</strong> Quick results in 4-10 steps</li>
-                <li>• <strong>HD Model:</strong> Maximum detail at 1920×1080</li>
-                <li>• <strong>Vector Model:</strong> Scalable SVG graphics</li>
-                <li>• Use negative prompts to exclude unwanted elements</li>
-                <li>• Higher steps = better quality but slower generation</li>
-                <li>• Seed values ensure reproducible results</li>
-                <li>• Prompt enhancement improves your descriptions</li>
-              </ul>
-            </div>
-
-            {/* Current Settings Summary */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Current Settings</h4>
-              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <div>Model: <span className="font-medium">{getSelectedModel().name}</span></div>
-                <div>Quality: <span className="font-medium">{getSelectedQuality().name} ({getSelectedQuality().steps} steps, {getSelectedQuality().guidance} guidance)</span></div>
-                <div>Medium: <span className="font-medium">{medium}</span></div>
-                <div>Aspect Ratio: <span className="font-medium">{aspectRatio}</span></div>
-                <div>Results: <span className="font-medium">{numResults} image{numResults > 1 ? 's' : ''}</span></div>
-                {seed && <div>Seed: <span className="font-medium">{seed}</span></div>}
-              </div>
-            </div>
-          </div>
-
-          {/* Left Column - Controls (Second on mobile) */}
-          <div className="space-y-4 lg:space-y-6 order-2 lg:order-1 xl:order-1">
-            {/* Prompt Input */}
+            {/* Your Prompt - Always below Generated Image */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
               <Button
                 variant="ghost"
@@ -725,6 +694,38 @@ export default function ImageCreator() {
                 </>
               )}
             </div>
+
+            {/* Bria AI Tips */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">🚀 Bria AI Pro Tips</h4>
+              <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                <li>• <strong>Base Model:</strong> Best overall quality and creativity</li>
+                <li>• <strong>Fast Model:</strong> Quick results in 4-10 steps</li>
+                <li>• <strong>HD Model:</strong> Maximum detail at 1920×1080</li>
+                <li>• <strong>Vector Model:</strong> Scalable SVG graphics</li>
+                <li>• Use negative prompts to exclude unwanted elements</li>
+                <li>• Higher steps = better quality but slower generation</li>
+                <li>• Seed values ensure reproducible results</li>
+                <li>• Prompt enhancement improves your descriptions</li>
+              </ul>
+            </div>
+
+            {/* Current Settings Summary */}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Current Settings</h4>
+              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <div>Model: <span className="font-medium">{getSelectedModel().name}</span></div>
+                <div>Quality: <span className="font-medium">{getSelectedQuality().name} ({getSelectedQuality().steps} steps, {getSelectedQuality().guidance} guidance)</span></div>
+                <div>Medium: <span className="font-medium">{medium}</span></div>
+                <div>Aspect Ratio: <span className="font-medium">{aspectRatio}</span></div>
+                <div>Results: <span className="font-medium">{numResults} image{numResults > 1 ? 's' : ''}</span></div>
+                {seed && <div>Seed: <span className="font-medium">{seed}</span></div>}
+              </div>
+            </div>
+          </div>
+
+          {/* Left Column - Controls (Second on mobile) */}
+          <div className="space-y-4 lg:space-y-6 order-2 lg:order-2 xl:order-2">
 
             {/* Quick Templates */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
