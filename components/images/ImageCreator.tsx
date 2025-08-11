@@ -90,6 +90,14 @@ export default function ImageCreator() {
   const [modalImageUrl, setModalImageUrl] = useState<string>('');
   const [modalPrompt, setModalPrompt] = useState<string>('');
   const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
+  
+  // Collapsible widget states
+  const [showGeneratedImage, setShowGeneratedImage] = useState(true);
+  const [showPrompt, setShowPrompt] = useState(true);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showModel, setShowModel] = useState(false);
+  const [showQuality, setShowQuality] = useState(false);
+  const [showSavedImages, setShowSavedImages] = useState(false);
 
   // Load prompt from URL parameters on mount
   useEffect(() => {
@@ -472,115 +480,126 @@ export default function ImageCreator() {
           </div>
         </div>
 
-        {/* Mobile-first layout - Generated Image first on small screens, then controls */}
+        {/* Mobile-first layout - Generated Image first, then prompt, then other controls */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           
           {/* Generated Image - First on Mobile */}
-          <div className="space-y-4 lg:space-y-6 min-w-0 lg:order-2 xl:order-2">
+          <div className="space-y-4 lg:space-y-6 min-w-0 order-1 lg:order-2 xl:order-2">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4 truncate">Generated Image</h3>
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-between p-0 mb-3 sm:mb-4 min-w-0"
+                onClick={() => setShowGeneratedImage(!showGeneratedImage)}
+              >
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 text-left">Generated Image</h3>
+                <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 ml-2 ${showGeneratedImage ? 'rotate-180' : ''}`} />
+              </Button>
               
-              <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden relative group">
-                {generatedImage ? (
-                  imageLoadError ? (
-                    <div className="text-center p-4 sm:p-6 w-full min-w-0">
-                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4 mb-4 w-full">
-                        <div className="flex items-center gap-2 mb-2 min-w-0">
-                          <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-                          <span className="font-medium text-yellow-800 dark:text-yellow-200 text-sm sm:text-base truncate">Image Generated but Preview Failed</span>
+              {showGeneratedImage && (
+                <>
+                  <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden relative group">
+                    {generatedImage ? (
+                      imageLoadError ? (
+                        <div className="text-center p-4 sm:p-6 w-full min-w-0">
+                          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 sm:p-4 mb-4 w-full">
+                            <div className="flex items-center gap-2 mb-2 min-w-0">
+                              <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                              <span className="font-medium text-yellow-800 dark:text-yellow-200 text-sm sm:text-base truncate">Image Generated but Preview Failed</span>
+                            </div>
+                            <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 mb-3 break-words">
+                              The image was successfully created by Bria AI but cannot be displayed due to CORS restrictions.
+                            </p>
+                            <div className="flex flex-col gap-2 w-full">
+                              <Button onClick={copyImageUrl} size="sm" variant="outline" className="w-full">
+                                <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">Copy Image URL</span>
+                              </Button>
+                              <Button onClick={downloadImage} size="sm" className="w-full cursor-pointer">
+                                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+                                <span className="truncate">Download Image</span>
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 break-all">
+                            Original URL: {generatedImage.substring(0, 50)}...
+                          </p>
                         </div>
-                        <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300 mb-3 break-words">
-                          The image was successfully created by Bria AI but cannot be displayed due to CORS restrictions.
-                        </p>
-                        <div className="flex flex-col gap-2 w-full">
-                          <Button onClick={copyImageUrl} size="sm" variant="outline" className="w-full">
-                            <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                            <span className="truncate">Copy Image URL</span>
-                          </Button>
-                          <Button onClick={downloadImage} size="sm" className="w-full">
-                            <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                            <span className="truncate">Download Image</span>
-                          </Button>
-                        </div>
+                      ) : (
+                        <>
+                          <UniversalImage
+                            src={generatedImage}
+                            alt="Generated by Bria AI"
+                            fill
+                            className="object-cover transition-opacity group-hover:opacity-95"
+                            onLoad={handleImageLoad}
+                            onError={() => handleImageError()} 
+                          />
+                          
+                          {/* Preview Button Overlay */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                            <Button
+                              onClick={() => openImageModal(generatedImage, prompt)}
+                              size="lg"
+                              className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white shadow-2xl"
+                            >
+                              <Maximize2 className="h-5 w-5 mr-2" />
+                              Full Preview
+                            </Button>
+                          </div>
+                        </>
+                      )
+                    ) : isGenerating ? (
+                      <div className="text-center">
+                        <RefreshCw className="h-12 w-12 text-gray-400 animate-spin mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">Generating your image with Bria AI...</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">This may take 10-30 seconds</p>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 break-all">
-                        Original URL: {generatedImage.substring(0, 50)}...
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <UniversalImage
-                        src={generatedImage}
-                        alt="Generated by Bria AI"
-                        fill
-                        className="object-cover transition-opacity group-hover:opacity-95"
-                        onLoad={handleImageLoad}
-                        onError={() => handleImageError()} 
-                      />
+                    ) : (
+                      <div className="text-center">
+                        <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">Your generated image will appear here</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {generatedImage && (
+                    <div className="flex flex-col gap-2 mt-4 w-full">
+                      {/* Primary Download Button */}
+                      <Button 
+                        onClick={downloadImage} 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                        size="default"
+                      >
+                        <Download className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">Download Image</span>
+                      </Button>
                       
-                      {/* Preview Button Overlay */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
-                        <Button
-                          onClick={() => openImageModal(generatedImage, prompt)}
-                          size="lg"
-                          className="opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-200 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 text-white shadow-2xl"
+                      {/* Secondary Actions */}
+                      <div className="flex items-center gap-2 w-full">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={saveImage}
+                          disabled={!user}
+                          title={!user ? 'Please sign in to save images' : 'Save this image'}
+                          className="flex-1 min-w-0"
                         >
-                          <Maximize2 className="h-5 w-5 mr-2" />
-                          Full Preview
+                          <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm truncate">Save</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={copyImageUrl} 
+                          className="flex-1 min-w-0"
+                        >
+                          <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
+                          <span className="text-xs sm:text-sm truncate">Copy URL</span>
                         </Button>
                       </div>
-                    </>
-                  )
-                ) : isGenerating ? (
-                  <div className="text-center">
-                    <RefreshCw className="h-12 w-12 text-gray-400 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">Generating your image with Bria AI...</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">This may take 10-30 seconds</p>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">Your generated image will appear here</p>
-                  </div>
-                )}
-              </div>
-
-              {generatedImage && (
-                <div className="flex flex-col gap-2 mt-4 w-full">
-                  {/* Primary Download Button */}
-                  <Button 
-                    onClick={downloadImage} 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    size="default"
-                  >
-                    <Download className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate">Download Image</span>
-                  </Button>
-                  
-                  {/* Secondary Actions */}
-                  <div className="flex items-center gap-2 w-full">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={saveImage}
-                      disabled={!user}
-                      title={!user ? 'Please sign in to save images' : 'Save this image'}
-                      className="flex-1 min-w-0"
-                    >
-                      <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm truncate">Save</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={copyImageUrl} 
-                      className="flex-1 min-w-0"
-                    >
-                      <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 flex-shrink-0" />
-                      <span className="text-xs sm:text-sm truncate">Copy URL</span>
-                    </Button>
-                  </div>
-                </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -614,13 +633,21 @@ export default function ImageCreator() {
           </div>
 
           {/* Left Column - Controls (Second on mobile) */}
-          <div className="space-y-4 lg:space-y-6 lg:order-1 xl:order-1">
+          <div className="space-y-4 lg:space-y-6 order-2 lg:order-1 xl:order-1">
             {/* Prompt Input */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              {/* Title - Always at top */}
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Prompt</h3>
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-between p-0 mb-3 sm:mb-4 min-w-0"
+                onClick={() => setShowPrompt(!showPrompt)}
+              >
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 text-left">Your Prompt</h3>
+                <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 ml-2 ${showPrompt ? 'rotate-180' : ''}`} />
+              </Button>
               
-              {/* Action buttons - Always below title */}
+              {showPrompt && (
+                <>
+                  {/* Action buttons - Always below title */}
               <div className="flex flex-col sm:flex-row gap-2 mb-4">
                 <Button 
                   variant="outline" 
@@ -695,12 +722,23 @@ export default function ImageCreator() {
                   <ArrowRight className="h-3 w-3" />
                 </a>
               </div>
+                </>
+              )}
             </div>
 
             {/* Quick Templates */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Quick Templates</h3>
-              <div className="space-y-2 sm:space-y-3">
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-between p-0 mb-3 sm:mb-4 min-w-0"
+                onClick={() => setShowTemplates(!showTemplates)}
+              >
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 text-left">Quick Templates</h3>
+                <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 ml-2 ${showTemplates ? 'rotate-180' : ''}`} />
+              </Button>
+              
+              {showTemplates && (
+                <div className="space-y-2 sm:space-y-3">
                 {promptTemplates.map((template, index) => (
                   <Button
                     key={index}
@@ -716,13 +754,23 @@ export default function ImageCreator() {
                     </div>
                   </Button>
                 ))}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Model Selection */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Bria AI Model</h3>
-              <div className="space-y-3">
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-between p-0 mb-3 sm:mb-4 min-w-0"
+                onClick={() => setShowModel(!showModel)}
+              >
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 text-left">Bria AI Model</h3>
+                <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 ml-2 ${showModel ? 'rotate-180' : ''}`} />
+              </Button>
+              
+              {showModel && (
+                <div className="space-y-3">
                 {modelTypes.map((model) => (
                   <Button
                     key={model.id}
@@ -734,13 +782,23 @@ export default function ImageCreator() {
                     <span className="text-xs opacity-75 mt-2 leading-relaxed break-words w-full text-left">{model.description}</span>
                   </Button>
                 ))}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Quality & Performance */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Quality & Performance</h3>
-              <div className="space-y-4">
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-between p-0 mb-3 sm:mb-4 min-w-0"
+                onClick={() => setShowQuality(!showQuality)}
+              >
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 text-left">Quality & Performance</h3>
+                <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 ml-2 ${showQuality ? 'rotate-180' : ''}`} />
+              </Button>
+              
+              {showQuality && (
+                <div className="space-y-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quality Setting</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -775,7 +833,8 @@ export default function ImageCreator() {
                     ))}
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Advanced Settings */}
@@ -914,22 +973,31 @@ export default function ImageCreator() {
 
 
           {/* Third Column - Saved Images (Third on mobile) */}
-          <div className="space-y-4 lg:space-y-6 lg:col-span-1 xl:col-span-1 lg:order-3 xl:order-3">
+          <div className="space-y-4 lg:space-y-6 lg:col-span-1 xl:col-span-1 order-3 lg:order-3 xl:order-3">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Saved Images</h3>
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <Button
+                  variant="ghost"
+                  className="flex items-center justify-start p-0 min-w-0 flex-1"
+                  onClick={() => setShowSavedImages(!showSavedImages)}
+                >
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate flex-1 text-left">Saved Images</h3>
+                  <ChevronDown className={`h-4 w-4 sm:h-5 sm:w-5 transition-transform flex-shrink-0 ml-2 ${showSavedImages ? 'rotate-180' : ''}`} />
+                </Button>
                 <a 
                   href="/gallery" 
-                  className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg transition-all duration-200 hover:shadow-sm"
+                  className="inline-flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg transition-all duration-200 hover:shadow-sm ml-2 flex-shrink-0"
                   title="View all images in Gallery"
                 >
-                  <LayoutGrid className="h-4 w-4" />
-                  <span>Gallery</span>
-                  <ArrowRight className="h-3 w-3" />
+                  <LayoutGrid className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Gallery</span>
+                  <ArrowRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 </a>
               </div>
               
-              {loadingImages ? (
+              {showSavedImages && (
+                <>
+                  {loadingImages ? (
                 <div className="text-center py-8">
                   <RefreshCw className="h-8 w-8 text-gray-400 mx-auto mb-4 animate-spin" />
                   <p className="text-gray-600 dark:text-gray-400">Loading saved images...</p>
@@ -1106,6 +1174,8 @@ export default function ImageCreator() {
                       </div>
                     )}
                   </div>
+                </>
+              )}
                 </>
               )}
             </div>

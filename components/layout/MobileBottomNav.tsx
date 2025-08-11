@@ -9,7 +9,7 @@ import {
   Share2, 
   ImageIcon,
   Plus,
-  Images
+  FileImage
 } from 'lucide-react';
 
 interface NavItem {
@@ -24,7 +24,7 @@ const navigation: NavItem[] = [
   { name: 'Prompts', href: '/prompts', icon: MessageSquare, id: 'prompts' },
   { name: 'Create', href: '/images', icon: Plus, id: 'images' },
   { name: 'Social', href: '/social', icon: Share2, id: 'social' },
-  { name: 'Gallery', href: '/gallery', icon: Images, id: 'gallery' },
+  { name: 'Gallery', href: '/gallery', icon: FileImage, id: 'gallery' },
 ];
 
 export default function MobileBottomNav() {
