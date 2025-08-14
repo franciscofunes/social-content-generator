@@ -252,6 +252,8 @@ export async function selectDailyTopics(unusedTopics: Topic[]): Promise<string[]
 export async function generateOptimizedPrompt(description: string): Promise<string> {
   const prompt = `You are an expert prompt engineer specializing in BRIA AI image generation. Transform this user description into a highly detailed, professional prompt optimized for BRIA HD model 2.2: "${description}"
 
+IMPORTANT: If the user description already contains professional photography terminology (like "Professional corporate photography"), DO NOT duplicate these terms. Instead, enhance what's already there.
+
 BRIA HD OPTIMIZATION GUIDELINES:
 - BRIA excels with highly detailed, technical photography descriptions
 - Include specific lighting terms (professional studio lighting, natural window light, optimal exposure)
@@ -262,7 +264,7 @@ BRIA HD OPTIMIZATION GUIDELINES:
 - Mention camera/technical aspects when relevant (professional photography, commercial quality)
 
 STRUCTURE YOUR ENHANCED PROMPT:
-1. Start with image type/style (e.g., "Professional corporate photography of...")
+1. Start with image type/style (e.g., "Professional corporate photography of...") ONLY if not already present
 2. Add detailed subject description
 3. Include specific lighting details
 4. Add composition and technical quality terms
@@ -280,7 +282,7 @@ Return ONLY the optimized prompt, no explanations or additional text.`;
     const data = await makeGeminiRequest(prompt);
     const optimizedPrompt = data.candidates[0].content.parts[0].text.trim();
     
-    // Additional enhancement with our local BRIA optimization
+    // Additional enhancement with our local BRIA optimization (now handles duplicates)
     const localEnhancement = enhanceBasicPrompt(optimizedPrompt);
     
     return localEnhancement;
@@ -296,14 +298,39 @@ Return ONLY the optimized prompt, no explanations or additional text.`;
 // Local prompt enhancement function as fallback
 function enhanceBasicPrompt(userPrompt: string): string {
   const cleanPrompt = userPrompt.trim();
+  const lowerPrompt = cleanPrompt.toLowerCase();
   
-  // Detect content type for appropriate enhancement
+  // Check if prompt already contains professional photography terminology
+  const hasPhotographyTerms = lowerPrompt.includes('professional') && 
+                              (lowerPrompt.includes('photography') || lowerPrompt.includes('photograph'));
+  
+  // If already enhanced, just add missing BRIA-specific terms without duplicating
+  if (hasPhotographyTerms) {
+    let enhanced = cleanPrompt;
+    
+    // Only add terms that aren't already present
+    const missingTerms = [];
+    if (!lowerPrompt.includes('sharp focus')) missingTerms.push('sharp focus throughout');
+    if (!lowerPrompt.includes('high resolution')) missingTerms.push('high resolution detail');
+    if (!lowerPrompt.includes('commercial')) missingTerms.push('commercial photography quality');
+    if (!lowerPrompt.includes('realistic textures')) missingTerms.push('realistic textures and materials');
+    if (!lowerPrompt.includes('color accuracy')) missingTerms.push('excellent color accuracy');
+    if (!lowerPrompt.includes('photorealistic')) missingTerms.push('photorealistic rendering');
+    
+    if (missingTerms.length > 0) {
+      enhanced += ', ' + missingTerms.join(', ');
+    }
+    
+    return enhanced;
+  }
+  
+  // For basic prompts without photography terms, add full enhancement
   let enhancementStyle = 'corporate photography';
-  if (cleanPrompt.toLowerCase().includes('safety') || cleanPrompt.toLowerCase().includes('equipment')) {
+  if (lowerPrompt.includes('safety') || lowerPrompt.includes('equipment')) {
     enhancementStyle = 'industrial documentation photography';
-  } else if (cleanPrompt.toLowerCase().includes('person') || cleanPrompt.toLowerCase().includes('worker')) {
+  } else if (lowerPrompt.includes('person') || lowerPrompt.includes('worker')) {
     enhancementStyle = 'professional portrait photography';
-  } else if (cleanPrompt.toLowerCase().includes('office') || cleanPrompt.toLowerCase().includes('workspace')) {
+  } else if (lowerPrompt.includes('office') || lowerPrompt.includes('workspace')) {
     enhancementStyle = 'corporate interior photography';
   }
   
